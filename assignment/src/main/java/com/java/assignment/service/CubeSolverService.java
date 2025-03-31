@@ -8,7 +8,7 @@ import java.util.*;
 public class CubeSolverService {
     private final KociembaAlgorithm algorithm = new KociembaAlgorithm();
 
-    public List solveCube(String[][] cubeFaces) {
+    public List<String> solveCube(String[][] cubeFaces) {
         if (!CubeValidator.isValidCube(cubeFaces)) {
             throw new IllegalArgumentException("Invalid cube configuration");
         }
@@ -27,7 +27,7 @@ public class CubeSolverService {
         }
 
         Map<String, Integer> colorCounts = new HashMap<>();
-        Set centers = new HashSet<>();
+        Set<String> centers = new HashSet<>();
 
         for (String[] face : cubeFaces) {
             if (face == null || face.length != 9) {
@@ -43,7 +43,7 @@ public class CubeSolverService {
             throw new IllegalArgumentException("All center pieces must be unique");
         }
 
-        for (int count : colorCounts.values().stream().mapToInt(Integer::intValue).toArray()) {
+        for (int count : colorCounts.values()) {
             if (count != 9) {
                 throw new IllegalArgumentException("Each color must appear exactly 9 times");
             }

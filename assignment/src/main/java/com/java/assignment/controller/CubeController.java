@@ -336,23 +336,23 @@ public class CubeController {
         }
     }
 
-    @PostMapping("/solve-scramble")
-    public ResponseEntity<?> solveLastScramble() {
-        if (lastScramble.isEmpty()) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of(
-                            "error", "No scramble found",
-                            "status", "NO_SCRAMBLE"
-                    ));
-        }
+    // @PostMapping("/solve-scramble")
+    // public ResponseEntity<?> solveLastScramble() {
+    //     if (lastScramble.isEmpty()) {
+    //         return ResponseEntity.badRequest()
+    //                 .body(Map.of(
+    //                         "error", "No scramble found",
+    //                         "status", "NO_SCRAMBLE"
+    //                 ));
+    //     }
 
-        List<String> solvingSteps = getInverseMoves(lastScramble);
-        return ResponseEntity.ok(Map.of(
-                "solution", solvingSteps,
-                "moveCount", solvingSteps.size(),
-                "status", "SOLVED"
-        ));
-    }
+    //     List<String> solvingSteps = getInverseMoves(lastScramble);
+    //     return ResponseEntity.ok(Map.of(
+    //             "solution", solvingSteps,
+    //             "moveCount", solvingSteps.size(),
+    //             "status", "SOLVED"
+    //     ));
+    // }
 
     private List<String> generateRandomScramble(int length) {
         String[] moves = {"U", "D", "R", "L", "F", "B"};

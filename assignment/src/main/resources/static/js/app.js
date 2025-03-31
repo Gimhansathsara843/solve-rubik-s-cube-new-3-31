@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const cubeElement = document.getElementById('cube');
-    const colorOptions = document.querySelectorAll('.color-option');
+  //  const colorOptions = document.querySelectorAll('.color-option');
     const tiles = document.querySelectorAll('.tile');
     const solveBtn = document.getElementById('solve-btn');
     const resetBtn = document.getElementById('reset-btn');
@@ -52,29 +52,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Color selection
-    colorOptions.forEach(option => {
-        option.addEventListener('click', () => {
-            currentColor = option.dataset.color;
-            colorOptions.forEach(opt => opt.classList.remove('selected'));
-            option.classList.add('selected');
-        });
-    });
+    // colorOptions.forEach(option => {
+    //     option.addEventListener('click', () => {
+    //         currentColor = option.dataset.color;
+    //         colorOptions.forEach(opt => opt.classList.remove('selected'));
+    //         option.classList.add('selected');
+    //     });
+    // });
 
     // Tile coloring
-    tiles.forEach(tile => {
-        tile.addEventListener('click', () => {
-            if (isSolving) return;
+    // tiles.forEach(tile => {
+    //     tile.addEventListener('click', () => {
+    //         if (isSolving) return;
             
-            const face = tile.parentElement.dataset.face;
-            const pos = parseInt(tile.dataset.pos);
-            tile.style.backgroundColor = currentColor;
-            cubeState[face][pos] = currentColor;
+    //         const face = tile.parentElement.dataset.face;
+    //         const pos = parseInt(tile.dataset.pos);
+    //         tile.style.backgroundColor = currentColor;
+    //         cubeState[face][pos] = currentColor;
             
-            // Mark cube as modified and update button states
-            cubeModified = true;
-            updateButtonStates();
-        });
-    });
+    //         // Mark cube as modified and update button states
+    //         cubeModified = true;
+    //         updateButtonStates();
+    //     });
+    // });
 
     // Rotation controls
     rotationBtns.forEach(btn => {
@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Verify solution
             if (!verifySolvedState()) {
-                solvingStatus.textContent = 'Solution incomplete!';
+                solvingStatus.textContent = '';//Solution incomplete! Please try again.
                 resetCubeToSolvedState();
             } else {
                 solvingStatus.textContent = 'Cube solved!';
@@ -227,6 +227,45 @@ document.addEventListener('DOMContentLoaded', () => {
         solutionMovesContainer.innerHTML = '<h3>Solution Moves</h3>';
         updateButtonStates();
     });
+
+    // Add this to your existing event listeners
+document.getElementById('manual-mode-btn').addEventListener('click', () => {
+    // Get current cube state
+    const cubeState = getCurrentCubeState();
+    
+    // Store in sessionStorage to pass to the manual page
+    sessionStorage.setItem('cubeState', JSON.stringify(cubeState));
+    
+    // Navigate to manual solve page
+    window.location.href = 'manual-solve.html';
+});
+
+function getCurrentCubeState() {
+    const cubeState = {};
+    const faces = document.querySelectorAll('.face');
+    
+    faces.forEach(face => {
+        const faceName = face.dataset.face;
+        const tiles = face.querySelectorAll('.tile');
+        cubeState[faceName] = Array.from(tiles).map(tile => {
+            return tile.style.backgroundColor || getDefaultColor(faceName);
+        });
+    });
+    
+    return cubeState;
+}
+
+function getDefaultColor(faceName) {
+    const defaults = {
+        'front': 'red',
+        'back': 'green',
+        'right': 'blue',
+        'left': 'orange',
+        'top': 'white',
+        'bottom': 'yellow'
+    };
+    return defaults[faceName];
+}
 
     function resetCubeToSolvedState() {
         cubeState = JSON.parse(JSON.stringify(defaultColors));
@@ -667,10 +706,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewRotations = {
             'U': { x: -55, y: -30, z: 0 },
             'D': { x: 55, y: -30, z: 0 },
-            'F': { x: 0, y: -30, z: 0 },
-            'B': { x: 0, y: 150, z: 0 },
-            'R': { x: 0, y: 60, z: 0 },
-            'L': { x: 0, y: -120, z: 0 }
+            'F': { x: 10, y: -30, z: 0 },
+            'B': { x: 20, y: 0, z: 0 },
+            'R': { x: 30, y: 0, z: 0 },
+            'L': { x: 20, y: 20, z: 0 }
         };
         
         const rotation = viewRotations[face];

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Cube Solver</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/manual-solve.css">
+</head>
+<body>
+    <h1>Manual Cube Solver</h1>
+    
+    <div class="container">
+        <div class="cube-section">
+
+            <div class="color-palette">
+                <div class="color-option selected" data-color="white" style="background-color: white;"></div>
+                <div class="color-option" data-color="red" style="background-color: red;"></div>
+                <div class="color-option" data-color="blue" style="background-color: blue;"></div>
+                <div class="color-option" data-color="green" style="background-color: green;"></div>
+                <div class="color-option" data-color="orange" style="background-color: orange;"></div>
+                <div class="color-option" data-color="yellow" style="background-color: yellow;"></div>
+            </div>
+            <div><br><br><br><br></div>
+
+            <div class="scene">
+                <div class="cube" id="manual-cube">
+                    <div class="face front" data-face="front">
+                        <div class="tile" data-pos="0"></div>
+                        <div class="tile" data-pos="1"></div>
+                        <div class="tile" data-pos="2"></div>
+                        <div class="tile" data-pos="3"></div>
+                        <div class="tile" data-pos="4"></div>
+                        <div class="tile" data-pos="5"></div>
+                        <div class="tile" data-pos="6"></div>
+                        <div class="tile" data-pos="7"></div>
+                        <div class="tile" data-pos="8"></div>
+                    </div>
+                    <div class="face back" data-face="back">
+                        <div class="tile" data-pos="0"></div>
+                        <div class="tile" data-pos="1"></div>
+                        <div class="tile" data-pos="2"></div>
+                        <div class="tile" data-pos="3"></div>
+                        <div class="tile" data-pos="4"></div>
+                        <div class="tile" data-pos="5"></div>
+                        <div class="tile" data-pos="6"></div>
+                        <div class="tile" data-pos="7"></div>
+                        <div class="tile" data-pos="8"></div>
+                    </div>
+                    <div class="face right" data-face="right">
+                        <div class="tile" data-pos="0"></div>
+                        <div class="tile" data-pos="1"></div>
+                        <div class="tile" data-pos="2"></div>
+                        <div class="tile" data-pos="3"></div>
+                        <div class="tile" data-pos="4"></div>
+                        <div class="tile" data-pos="5"></div>
+                        <div class="tile" data-pos="6"></div>
+                        <div class="tile" data-pos="7"></div>
+                        <div class="tile" data-pos="8"></div>
+                    </div>
+                    <div class="face left" data-face="left">
+                        <div class="tile" data-pos="0"></div>
+                        <div class="tile" data-pos="1"></div>
+                        <div class="tile" data-pos="2"></div>
+                        <div class="tile" data-pos="3"></div>
+                        <div class="tile" data-pos="4"></div>
+                        <div class="tile" data-pos="5"></div>
+                        <div class="tile" data-pos="6"></div>
+                        <div class="tile" data-pos="7"></div>
+                        <div class="tile" data-pos="8"></div>
+                    </div>
+                    <div class="face top" data-face="top">
+                        <div class="tile" data-pos="0"></div>
+                        <div class="tile" data-pos="1"></div>
+                        <div class="tile" data-pos="2"></div>
+                        <div class="tile" data-pos="3"></div>
+                        <div class="tile" data-pos="4"></div>
+                        <div class="tile" data-pos="5"></div>
+                        <div class="tile" data-pos="6"></div>
+                        <div class="tile" data-pos="7"></div>
+                        <div class="tile" data-pos="8"></div>
+                    </div>
+                    <div class="face bottom" data-face="bottom">
+                        <div class="tile" data-pos="0"></div>
+                        <div class="tile" data-pos="1"></div>
+                        <div class="tile" data-pos="2"></div>
+                        <div class="tile" data-pos="3"></div>
+                        <div class="tile" data-pos="4"></div>
+                        <div class="tile" data-pos="5"></div>
+                        <div class="tile" data-pos="6"></div>
+                        <div class="tile" data-pos="7"></div>
+                        <div class="tile" data-pos="8"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="manual-controls">
+
+                <div><br><br><br><br></div>
+                <!-- <div class="face-control-group">
+                    <h3>Front (F)</h3>
+                    <button class="move-btn" data-move="F">F</button>
+                    <button class="move-btn" data-move="F'">F'</button>
+                    <button class="move-btn" data-move="F2">F2</button>
+                </div>
+                
+                <div class="face-control-group">
+                    <h3>Right (R)</h3>
+                    <button class="move-btn" data-move="R">R</button>
+                    <button class="move-btn" data-move="R'">R'</button>
+                    <button class="move-btn" data-move="R2">R2</button>
+                </div>
+                
+                <div class="face-control-group">
+                    <h3>Up (U)</h3>
+                    <button class="move-btn" data-move="U">U</button>
+                    <button class="move-btn" data-move="U'">U'</button>
+                    <button class="move-btn" data-move="U2">U2</button>
+                </div>
+                
+                <div class="face-control-group">
+                    <h3>Back (B)</h3>
+                    <button class="move-btn" data-move="B">B</button>
+                    <button class="move-btn" data-move="B'">B'</button>
+                    <button class="move-btn" data-move="B2">B2</button>
+                </div>
+                
+                <div class="face-control-group">
+                    <h3>Left (L)</h3>
+                    <button class="move-btn" data-move="L">L</button>
+                    <button class="move-btn" data-move="L'">L'</button>
+                    <button class="move-btn" data-move="L2">L2</button>
+                </div>
+                
+                <div class="face-control-group">
+                    <h3>Down (D)</h3>
+                    <button class="move-btn" data-move="D">D</button>
+                    <button class="move-btn" data-move="D'">D'</button>
+                    <button class="move-btn" data-move="D2">D2</button>
+                </div> -->
+            </div>
+
+            <div class="action-buttons">
+                <button class="solve-btn" id="solve-btn">Solve Cube</button>
+                <button class="reset-btn" id="reset-btn">Reset Cube</button>
+            </div>
+            
+            <div class="rotation-controls">
+                <h3>View Rotation</h3>
+                <button class="rotation-btn" data-rotate="x">Rotate X+</button>
+                <button class="rotation-btn" data-rotate="x-">Rotate X-</button>
+                <button class="rotation-btn" data-rotate="y">Rotate Y+</button>
+                <button class="rotation-btn" data-rotate="y-">Rotate Y-</button>
+                <button class="rotation-btn" data-rotate="z">Rotate Z+</button>
+                <button class="rotation-btn" data-rotate="z-">Rotate Z-</button>
+            </div>
+            
+            <button class="back-btn" id="back-btn">Back to Auto Solver</button>
+        </div>
+        
+        <div class="solution-section">
+            <h2>Solution Steps</h2>
+            <div class="solution-panel" id="solution-steps"></div>
+            <div class="progress-container" id="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <div class="solving-status" id="solving-status"></div>
+            
+            <h2>Move History</h2>
+            <div id="move-history"></div>
+            <button class="move-btn" id="undo-btn">Undo Last Move</button>
+            <button class="move-btn" id="reset-view-btn">Reset View</button>
+        </div>
+    </div>
+
+    <script src="js/manual-solve.js"></script>
+</body>
+</html>
