@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3D Rubik's Cube Solver</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 40px;
+            max-width: 1200px;
+        }
+        
+        .cube-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .color-palette {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #333;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-option.selected {
+            transform: scale(1.2);
+            border: 3px solid #007bff;
+        }
+        
+        .scene {
+            width: 300px;
+            height: 300px;
+            perspective: 1000px;
+            margin-bottom: 20px;
+        }
+        
+        .cube {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(-20deg) rotateY(-30deg);
+            transition: transform 1s;
+        }
+        
+        .face {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border: 2px solid #333;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 2px;
+            padding: 2px;
+            box-sizing: border-box;
+        }
+        
+        .tile {
+            border: 1px solid rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+        
+        .front { transform: translateZ(50px); background-color: rgba(255, 0, 0, 0.2); }
+        .back { transform: rotateY(180deg) translateZ(50px); background-color: rgba(0, 255, 0, 0.2); }
+        .right { transform: rotateY(90deg) translateZ(50px); background-color: rgba(0, 0, 255, 0.2); }
+        .left { transform: rotateY(-90deg) translateZ(50px); background-color: rgba(255, 165, 0, 0.2); }
+        .top { transform: rotateX(90deg) translateZ(50px); background-color: rgba(255, 255, 255, 0.2); }
+        .bottom { transform: rotateX(-90deg) translateZ(50px); background-color: rgba(255, 255, 0, 0.2); }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .rotation-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .rotation-btn {
+            padding: 8px 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .solve-btn {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        
+        .solution-section {
+            width: 400px;
+            max-height: 500px;
+            overflow-y: auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .solution-step {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .current-step {
+            background-color: #e6f7ff;
+            font-weight: bold;
+        }
+        
+        .reset-btn {
+            padding: 10px 20px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .instructions {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
+            max-width: 800px;
+        }
+        
+        .instructions h2 {
+            color: #333;
+            margin-top: 0;
+        }
+        
+        .instructions ol {
+            padding-left: 20px;
+        }
+        .solution-instructions {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.moves-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 15px 0;
+}
+
+.move-chip {
+  padding: 8px 12px;
+  background: #e9ecef;
+  border-radius: 20px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+}
+
+.move-chip .move-arrow {
+  margin-left: 5px;
+  color: #6c757d;
+}
+
+.instruction-key {
+  margin-top: 20px;
+  padding: 10px;
+  background: #e9ecef;
+  border-radius: 5px;
+}
+
+.notation-item {
+  display: flex;
+  align-items: center;
+  margin: 5px 0;
+}
+
+.notation-symbol {
+  font-weight: bold;
+  width: 30px;
+}
+
+.notation-meaning {
+  flex: 1;
+  margin: 0 10px;
+}
+
+.notation-arrow {
+  font-size: 1.2em;
+  width: 20px;
+}
+    </style>
+</head>
+<body>
+    <h1>3D Rubik's Cube Solver</h1>
+    
+    <div class="container">
+        <div class="cube-section">
+            <div class="color-palette">
+                <div class="color-option selected" data-color="white" style="background-color: white;"></div>
+                <div class="color-option" data-color="red" style="background-color: red;"></div>
+                <div class="color-option" data-color="blue" style="background-color: blue;"></div>
+                <div class="color-option" data-color="green" style="background-color: green;"></div>
+                <div class="color-option" data-color="orange" style="background-color: orange;"></div>
+                <div class="color-option" data-color="yellow" style="background-color: yellow;"></div>
+            </div>
+            
+            <div class="scene">
+                <div class="cube" id="cube">
+                    <div class="face front" data-face="front">
+                        <div class="tile" data-pos="0"></div>
+                        <div class="tile" data-pos="1"></div>
+                        <div class="tile" data-pos="2"></div>
+                        <div class="tile" data-pos="3"></div>
+                        <div class="tile" data-pos="4"></div>
+                        <div class="tile" data-pos="5"></div>
+                        <div class="tile" data-pos="6"></div>
+                        <div class="tile" data-pos="7"></div>
+                        <div class="tile" data-pos="8"></div>
+                    </div>
+                    <div class="face back" data-face="back">
+                        <div class="tile" data-pos="0"></div>
+                        <div class="tile" data-pos="1"></div>
+                        <div class="tile" data-pos="2"></div>
+                        <div class="tile" data-pos="3"></div>
+                        <div class="tile" data-pos="4"></div>
+                        <div class="tile" data-pos="5"></div>
+                        <div class="tile" data-pos="6"></div>
+                        <div class="tile" data-pos="7"></div>
+                        <div class="tile" data-pos="8"></div>
+                    </div>
+                    <div class="face right" data-face="right">
+                        <div class="tile" data-pos="0"></div>
+                        <div class="tile" data-pos="1"></div>
+                        <div class="tile" data-pos="2"></div>
+                        <div class="tile" data-pos="3"></div>
+                        <div class="tile" data-pos="4"></div>
+                        <div class="tile" data-pos="5"></div>
+                        <div class="tile" data-pos="6"></div>
+                        <div class="tile" data-pos="7"></div>
+                        <div class="tile" data-pos="8"></div>
+                    </div>
+                    <div class="face left" data-face="left">
+                        <div class="tile" data-pos="0"></div>
+                        <div class="tile" data-pos="1"></div>
+                        <div class="tile" data-pos="2"></div>
+                        <div class="tile" data-pos="3"></div>
+                        <div class="tile" data-pos="4"></div>
+                        <div class="tile" data-pos="5"></div>
+                        <div class="tile" data-pos="6"></div>
+                        <div class="tile" data-pos="7"></div>
+                        <div class="tile" data-pos="8"></div>
+                    </div>
+                    <div class="face top" data-face="top">
+                        <div class="tile" data-pos="0"></div>
+                        <div class="tile" data-pos="1"></div>
+                        <div class="tile" data-pos="2"></div>
+                        <div class="tile" data-pos="3"></div>
+                        <div class="tile" data-pos="4"></div>
+                        <div class="tile" data-pos="5"></div>
+                        <div class="tile" data-pos="6"></div>
+                        <div class="tile" data-pos="7"></div>
+                        <div class="tile" data-pos="8"></div>
+                    </div>
+                    <div class="face bottom" data-face="bottom">
+                        <div class="tile" data-pos="0"></div>
+                        <div class="tile" data-pos="1"></div>
+                        <div class="tile" data-pos="2"></div>
+                        <div class="tile" data-pos="3"></div>
+                        <div class="tile" data-pos="4"></div>
+                        <div class="tile" data-pos="5"></div>
+                        <div class="tile" data-pos="6"></div>
+                        <div class="tile" data-pos="7"></div>
+                        <div class="tile" data-pos="8"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="rotation-controls">
+                    <button class="rotation-btn" data-rotate="x">Rotate X+</button>
+                    <button class="rotation-btn" data-rotate="x-">Rotate X-</button>
+                    <button class="rotation-btn" data-rotate="y">Rotate Y+</button>
+                    <button class="rotation-btn" data-rotate="y-">Rotate Y-</button>
+                    <button class="rotation-btn" data-rotate="z">Rotate Z+</button>
+                    <button class="rotation-btn" data-rotate="z-">Rotate Z-</button>
+                </div>
+                
+                <button class="solve-btn" id="solve-btn">Solve Cube</button>
+                <button class="reset-btn" id="reset-btn">Reset Cube</button>
+            </div>
+        </div>
+        
+        <div class="solution-section">
+            <h2>Solution Steps</h2>
+            <div id="solution-steps"></div>
+        </div>
+    </div>
+    
+    <div class="instructions">
+        <h2>How to Use the Rubik's Cube Solver</h2>
+        <ol>
+            <li><strong>Select a color</strong> from the palette at the top</li>
+            <li><strong>Click on tiles</strong> in the 3D cube to apply the selected color</li>
+            <li><strong>Rotate the view</strong> using the rotation buttons to access all faces</li>
+            <li><strong>Click "Solve Cube"</strong> when you've configured your cube</li>
+            <li><strong>Follow the solution steps</strong> that appear on the right</li>
+            <li>Use <strong>"Reset Cube"</strong> to start over with a solved cube</li>
+        </ol>
+        <p>Tip: Make sure each face has a single solid color for accurate solving.</p>
+    </div>
+    <div class="solution-instructions">
+        <h3>Move Instructions</h3>
+        <div class="moves-container" id="moves-container">
+          <!-- Moves will be inserted here by JavaScript -->
+        </div>
+        
+        <div class="solution-instructions">
+            <h3>Move Instructions</h3>
+            <div class="moves-container" id="moves-container">
+              <!-- Moves will be inserted here by JavaScript -->
+            </div>
+            
+            <!-- Complete Notation Guide -->
+            <div class="instruction-key">
+              <h4>Notation Guide:</h4>
+              
+              <div class="notation-group">
+                <h5>Face Turns (90° clockwise)</h5>
+                <div class="notation-item">
+                  <span class="notation-symbol">U</span>
+                  <span class="notation-meaning">Up (top) layer →</span>
+                  <span class="notation-arrow">→</span>
+                </div>
+                <div class="notation-item">
+                  <span class="notation-symbol">R</span>
+                  <span class="notation-meaning">Right side ↓</span>
+                  <span class="notation-arrow">↓</span>
+                </div>
+                <div class="notation-item">
+                  <span class="notation-symbol">L</span>
+                  <span class="notation-meaning">Left side ↑</span>
+                  <span class="notation-arrow">↑</span>
+                </div>
+                <div class="notation-item">
+                  <span class="notation-symbol">F</span>
+                  <span class="notation-meaning">Front layer ↻</span>
+                  <span class="notation-arrow">↻</span>
+                </div>
+                <div class="notation-item">
+                  <span class="notation-symbol">B</span>
+                  <span class="notation-meaning">Back layer ↺</span>
+                  <span class="notation-arrow">↺</span>
+                </div>
+                <div class="notation-item">
+                  <span class="notation-symbol">D</span>
+                  <span class="notation-meaning">Down (bottom) layer →</span>
+                  <span class="notation-arrow">→</span>
+                </div>
+              </div>
+          
+              <div class="notation-group">
+                <h5>Counter-clockwise (Add ')</h5>
+                <div class="notation-item">
+                  <span class="notation-symbol">U'</span>
+                  <span class="notation-meaning">Up layer ←</span>
+                  <span class="notation-arrow">←</span>
+                </div>
+                <div class="notation-item">
+                  <span class="notation-symbol">R'</span>
+                  <span class="notation-meaning">Right side ↑</span>
+                  <span class="notation-arrow">↑</span>
+                </div>
+                <div class="notation-item">
+                  <span class="notation-symbol">F'</span>
+                  <span class="notation-meaning">Front layer ↺</span>
+                  <span class="notation-arrow">↺</span>
+                </div>
+              </div>
+          
+              <div class="notation-group">
+                <h5>Double Turns (Add 2)</h5>
+                <div class="notation-item">
+                  <span class="notation-symbol">U2</span>
+                  <span class="notation-meaning">Up layer 180°</span>
+                  <span class="notation-arrow">↻↻</span>
+                </div>
+                <div class="notation-item">
+                  <span class="notation-symbol">F2</span>
+                  <span class="notation-meaning">Front layer 180°</span>
+                  <span class="notation-arrow">↻↻</span>
+                </div>
+              </div>
+          
+              <div class="notation-group">
+                <h5>Slice Moves</h5>
+                <div class="notation-item">
+                  <span class="notation-symbol">M</span>
+                  <span class="notation-meaning">Middle layer (L direction)</span>
+                  <span class="notation-arrow">↑</span>
+                </div>
+                <div class="notation-item">
+                  <span class="notation-symbol">E</span>
+                  <span class="notation-meaning">Equator layer (D direction)</span>
+                  <span class="notation-arrow">→</span>
+                </div>
+              </div>
+          
+              <div class="notation-group">
+                <h5>Whole Cube Rotations</h5>
+                <div class="notation-item">
+                  <span class="notation-symbol">x</span>
+                  <span class="notation-meaning">Rotate cube on R</span>
+                  <span class="notation-arrow">↷</span>
+                </div>
+                <div class="notation-item">
+                  <span class="notation-symbol">y</span>
+                  <span class="notation-meaning">Rotate cube on U</span>
+                  <span class="notation-arrow">↻</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cubeElement = document.getElementById('cube');
+            const colorOptions = document.querySelectorAll('.color-option');
+            const tiles = document.querySelectorAll('.tile');
+            const solveBtn = document.getElementById('solve-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const rotationBtns = document.querySelectorAll('.rotation-btn');
+            const solutionStepsElement = document.getElementById('solution-steps');
+            
+            let currentColor = 'white';
+            let currentRotationX = -20;
+            let currentRotationY = -30;
+            let currentRotationZ = 0;
+            
+            // Initialize cube colors (default solved state)
+            const defaultColors = {
+                front: Array(9).fill('red'),
+                back: Array(9).fill('green'),
+                right: Array(9).fill('blue'),
+                left: Array(9).fill('orange'),
+                top: Array(9).fill('white'),
+                bottom: Array(9).fill('yellow')
+            };
+            
+            let cubeState = JSON.parse(JSON.stringify(defaultColors));
+            
+            // Color selection
+            colorOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    currentColor = option.dataset.color;
+                    
+                    // Update selected state
+                    colorOptions.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                });
+            });
+            
+            // Tile coloring
+            tiles.forEach(tile => {
+                tile.addEventListener('click', () => {
+                    const face = tile.parentElement.dataset.face;
+                    const pos = tile.dataset.pos;
+                    
+                    // Update tile color
+                    tile.style.backgroundColor = currentColor;
+                    
+                    // Update cube state
+                    cubeState[face][pos] = currentColor;
+                });
+            });
+            
+            // Rotation controls
+            rotationBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const rotation = btn.dataset.rotate;
+                    
+                    switch (rotation) {
+                        case 'x':
+                            currentRotationX += 20;
+                            break;
+                        case 'x-':
+                            currentRotationX -= 20;
+                            break;
+                        case 'y':
+                            currentRotationY += 20;
+                            break;
+                        case 'y-':
+                            currentRotationY -= 20;
+                            break;
+                        case 'z':
+                            currentRotationZ += 20;
+                            break;
+                        case 'z-':
+                            currentRotationZ -= 20;
+                            break;
+                    }
+                    
+                    updateCubeRotation();
+                });
+            });
+            
+            function updateCubeRotation() {
+                cubeElement.style.transform = `
+                    rotateX(${currentRotationX}deg)
+                    rotateY(${currentRotationY}deg)
+                    rotateZ(${currentRotationZ}deg)
+                `;
+            }
+            
+            // Solve button
+            solveBtn.addEventListener('click', async () => {
+                // Prepare cube data for API
+                const cubeFaces = [
+                    cubeState.front,
+                    cubeState.right,
+                    cubeState.back,
+                    cubeState.left,
+                    cubeState.top,
+                    cubeState.bottom
+                ];
+                
+                // Validate cube state
+                if (!validateCubeState(cubeFaces)) {
+    alert('Invalid cube state! Please ensure:\n'
+        + '- All tiles have colors\n'
+        + '- Each color (white, red, blue, green, orange, yellow) appears exactly 9 times\n'
+        + '- The cube configuration is physically possible');
+    return;
+}
+                
+                try {
+                    // Call backend API
+                    // Change this line in your solve button event handler
+                        const response = await fetch('http://localhost:8080/api/cube/solve', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(cubeFaces)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to solve cube');
+                    }
+                    
+                    const solution = await response.json();
+                    displaySolution(solution);
+                    
+                } catch (error) {
+                    console.error('Error solving cube:', error);
+                    alert('Error solving cube. Please check console for details.');
+                }
+            });
+            
+            // Reset button
+            resetBtn.addEventListener('click', () => {
+                // Reset cube state
+                cubeState = JSON.parse(JSON.stringify(defaultColors));
+                
+                // Reset visual tiles
+                tiles.forEach(tile => {
+                    const face = tile.parentElement.dataset.face;
+                    const pos = tile.dataset.pos;
+                    tile.style.backgroundColor = cubeState[face][pos];
+                });
+                
+                // Reset rotation
+                currentRotationX = -20;
+                currentRotationY = -30;
+                currentRotationZ = 0;
+                updateCubeRotation();
+                
+                // Clear solution
+                solutionStepsElement.innerHTML = '';
+            });
+            
+            // function validateCubeState(cubeFaces) {
+            //     // Check if each face has a uniform color
+            //     for (const face of cubeFaces) {
+            //         const firstColor = face[0];
+            //         for (let i = 1; i < face.length; i++) {
+            //             if (face[i] !== firstColor) {
+            //                 return false;
+            //             }
+            //         }
+            //     }
+            //     return true;
+            // }
+
+//             function validateCubeState(cubeFaces) {
+//     // Check all tiles have colors
+//     for (const face of cubeFaces) {
+//         for (const tile of face) {
+//             if (!tile || typeof tile !== 'string') {
+//                 return false;
+//             }
+//         }
+//     }
+    
+//     // Count all colors to ensure we have exactly 9 of each
+//     const colorCounts = {};
+//     cubeFaces.flat().forEach(color => {
+//         colorCounts[color] = (colorCounts[color] || 0) + 1;
+//     });
+    
+//     // Standard cube has 9 tiles of each color
+//     const expectedCount = 9;
+//     for (const color in colorCounts) {
+//         if (colorCounts[color] !== expectedCount) {
+//             return false;
+//         }
+//     }
+    
+//     return true;
+// }
+
+function validateCubeState(cubeFaces) {
+    // Check all tiles have colors
+    for (const face of cubeFaces) {
+        for (const tile of face) {
+            if (!tile || typeof tile !== 'string') {
+                return false;
+            }
+        }
+    }
+    
+    // Count all colors to ensure we have exactly 9 of each
+    const colorCounts = {};
+    cubeFaces.flat().forEach(color => {
+        colorCounts[color] = (colorCounts[color] || 0) + 1;
+    });
+    
+    // Standard cube colors
+    const expectedColors = ['white', 'red', 'blue', 'green', 'orange', 'yellow'];
+    
+    // Check we have exactly 9 of each expected color
+    for (const color of expectedColors) {
+        if (colorCounts[color] !== 9) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+            
+            function displaySolution(steps) {
+                solutionStepsElement.innerHTML = '';
+                
+                if (steps.length === 0) {
+                    solutionStepsElement.innerHTML = '<p>Cube is already solved!</p>';
+                    return;
+                }
+                
+                steps.forEach((step, index) => {
+                    const stepElement = document.createElement('div');
+                    stepElement.className = 'solution-step';
+                    stepElement.textContent = `Step ${index + 1}: ${step}`;
+                    solutionStepsElement.appendChild(stepElement);
+                });
+                
+                // Animate solution (simplified)
+                let currentStep = 0;
+                const stepElements = document.querySelectorAll('.solution-step');
+                
+                const animateSolution = () => {
+                    if (currentStep >= steps.length) return;
+                    
+                    // Highlight current step
+                    stepElements.forEach((el, idx) => {
+                        el.classList.toggle('current-step', idx === currentStep);
+                    });
+                    
+                    // Apply move to cube visualization
+                    applyMoveToVisualCube(steps[currentStep]);
+                    
+                    currentStep++;
+                    if (currentStep < steps.length) {
+                        setTimeout(animateSolution, 1000);
+                    }
+                };
+                
+                animateSolution();
+            }
+            
+            function applyMoveToVisualCube(move) {
+                // Simplified - in a real app this would animate the cube rotation
+                console.log(`Applying move: ${move}`);
+                // This would need to update the cubeState and visual representation
+                // For now, we'll just log it
+            }
+            
+            // Initialize tile colors
+            tiles.forEach(tile => {
+                const face = tile.parentElement.dataset.face;
+                const pos = tile.dataset.pos;
+                tile.style.backgroundColor = cubeState[face][pos];
+            });
+        });
+
+        function displaySolution(steps) {
+  const solutionStepsElement = document.getElementById('solution-steps');
+  const movesContainer = document.getElementById('moves-container');
+  
+  solutionStepsElement.innerHTML = '';
+  movesContainer.innerHTML = '';
+  
+  if (steps.length === 0) {
+    solutionStepsElement.innerHTML = '<p>Cube is already solved!</p>';
+    return;
+  }
+
+  // Create move chips
+  steps.forEach((step, index) => {
+    const moveElement = document.createElement('div');
+    moveElement.className = 'move-chip';
+    moveElement.innerHTML = `
+      <span class="move-symbol">${step}</span>
+      <span class="move-arrow">${getMoveArrow(step)}</span>
+    `;
+    moveElement.dataset.index = index;
+    movesContainer.appendChild(moveElement);
+    
+    // Add to solution steps
+    const stepElement = document.createElement('div');
+    stepElement.className = 'solution-step';
+    stepElement.textContent = `Step ${index + 1}: ${step} (${getMoveDescription(step)})`;
+    solutionStepsElement.appendChild(stepElement);
+  });
+}
+
+function getMoveArrow(move) {
+  const arrows = {
+    'U': '→',
+    'U\'': '←',
+    'U2': '↻',
+    'R': '↓',
+    'R\'': '↑',
+    'L': '↑',
+    'L\'': '↓',
+    'F': '↷',
+    'F\'': '↶',
+    'B': '↶',
+    'B\'': '↷',
+    'D': '→',
+    'D\'': '←'
+  };
+  return arrows[move] || '';
+}
+
+function getMoveDescription(move) {
+  const descriptions = {
+    'U': 'Top clockwise',
+    'U\'': 'Top counter-clockwise',
+    'U2': 'Top 180°',
+    'R': 'Right down',
+    'R\'': 'Right up',
+    'L': 'Left up',
+    'L\'': 'Left down',
+    'F': 'Front away',
+    'F\'': 'Front toward',
+    'B': 'Back toward',
+    'B\'': 'Back away',
+    'D': 'Bottom clockwise',
+    'D\'': 'Bottom counter-clockwise'
+  };
+  return descriptions[move] || 'Unknown move';
+}
+    </script>
+
+</body>
+</html>
