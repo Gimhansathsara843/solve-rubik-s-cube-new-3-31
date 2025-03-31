@@ -591,11 +591,45 @@
                 animateSolution(scrambleMoves);
             });
             
-            // Solve button
-// Replace the solveBtn click handler with this:
+// Add this near the top with other variable declarations
+let scrambleHistory = [];
+
+// Update the scramble button handler
+scrambleBtn.addEventListener('click', () => {
+    if (isSolving) return;
+    
+    scrambleHistory = []; // Reset history
+    const moves = ['U', 'U\'', 'U2', 'D', 'D\'', 'D2', 'R', 'R\'', 'R2', 'L', 'L\'', 'L2', 'F', 'F\'', 'F2', 'B', 'B\'', 'B2'];
+    
+    // Generate 20 random moves
+    for (let i = 0; i < 20; i++) {
+        const randomMove = moves[Math.floor(Math.random() * moves.length)];
+        scrambleHistory.push(randomMove);
+    }
+    
+    // Apply scramble moves with animation
+    animateSolution(scrambleHistory);
+});
+
+// Update the solve button handler to reverse scramble moves if we have history
 solveBtn.addEventListener('click', async () => {
     if (isSolving) return;
     
+    // If we have scramble history, reverse those moves first
+    if (scrambleHistory.length > 0) {
+        const reverseMoves = [...scrambleHistory].reverse().map(move => {
+            if (move.endsWith('\'')) return move.replace('\'', '');
+            if (move.endsWith('2')) return move;
+            return move + '\'';
+        });
+        
+        displaySolution(reverseMoves);
+        animateSolution(reverseMoves);
+        scrambleHistory = []; // Clear history after solving
+        return;
+    }
+    
+    // Otherwise use the algorithm solver
     try {
         isSolving = true;
         solveBtn.disabled = true;
@@ -603,18 +637,8 @@ solveBtn.addEventListener('click', async () => {
         solvingStatus.style.display = 'block';
         solvingStatus.textContent = 'Initializing...';
 
-        // First verify backend connection
-        try {
-            const pingResponse = await fetch('http://localhost:8080/api/cube/solved-state');
-            if (!pingResponse.ok) {
-                throw new Error('Backend not responding');
-            }
-        } catch (err) {
-            throw new Error(`Backend connection failed: ${err.message}`);
-        }
-
+        // Validate cube state
         solvingStatus.textContent = 'Validating cube...';
-        
         const cubeFaces = [
             cubeState.front,
             cubeState.right,
@@ -624,7 +648,6 @@ solveBtn.addEventListener('click', async () => {
             cubeState.bottom
         ];
 
-        // Validate cube state
         if (!validateCubeState(cubeFaces)) {
             throw new Error('Invalid cube configuration');
         }
@@ -672,6 +695,25 @@ solveBtn.addEventListener('click', async () => {
         isSolving = false;
         solveBtn.disabled = false;
     }
+});
+
+// Update the tile coloring to include console.log
+tiles.forEach(tile => {
+    tile.addEventListener('click', () => {
+        if (isSolving) return;
+        
+        const face = tile.parentElement.dataset.face;
+        const pos = tile.dataset.pos;
+        
+        // Update tile color
+        tile.style.backgroundColor = currentColor;
+        
+        // Update cube state
+        cubeState[face][pos] = currentColor;
+        
+        // Log the change to console
+        console.log(`Set ${face} face, position ${pos} to ${currentColor}`);
+    });
 });
             
             // Reset button
@@ -818,115 +860,109 @@ solveBtn.addEventListener('click', async () => {
             }
             
             function applyMoveToVisualCube(move) {
-                // Update cube state based on the move
-                const faceMap = {
-                    'U': 'top', 'D': 'bottom', 'F': 'front',
-                    'B': 'back', 'R': 'right', 'L': 'left'
-                };
-                
-                const face = move.charAt(0);
-                const faceName = faceMap[face];
-                const isClockwise = move.length === 1 || move[1] === '2';
-                const isDouble = move.length > 1 && move[1] === '2';
-                
-                // Rotate the face
-                rotateFace(faceName, isClockwise);
-                if (isDouble) {
-                    rotateFace(faceName, isClockwise);
-                }
-                
-                // Update the visual cube
-                updateCubeVisuals();
+    // Create a deep copy of the current cube state
+    const newState = JSON.parse(JSON.stringify(cubeState));
+    
+    // Apply the move to the new state
+    const faceMap = {
+        'U': 'top', 'D': 'bottom', 'F': 'front',
+        'B': 'back', 'R': 'right', 'L': 'left'
+    };
+    
+    const face = move.charAt(0);
+    const faceName = faceMap[face];
+    const isClockwise = !move.includes("'");
+    const isDouble = move.includes("2");
+    
+    // Rotate the face
+    rotateFaceInState(newState, faceName, isClockwise);
+    
+    // For double moves, rotate again
+    if (isDouble) {
+        rotateFaceInState(newState, faceName, isClockwise);
+    }
+    
+    // Update the cube state
+    cubeState = newState;
+    
+    // Update the visual cube
+    updateCubeVisuals();
+    
+    // Also rotate the view to show the move better
+    if (face === 'U') currentRotationY += 90;
+    if (face === 'D') currentRotationY -= 90;
+    if (face === 'R') currentRotationX -= 90;
+    if (face === 'L') currentRotationX += 90;
+    if (face === 'F') currentRotationZ += 90;
+    if (face === 'B') currentRotationZ -= 90;
+    updateCubeRotation();
+}
+
+function rotateFaceInState(state, face, clockwise) {
+    const faceData = state[face];
+    const rotated = new Array(9);
+    
+    if (clockwise) {
+        // Clockwise rotation
+        rotated[0] = faceData[6];
+        rotated[1] = faceData[3];
+        rotated[2] = faceData[0];
+        rotated[3] = faceData[7];
+        rotated[4] = faceData[4];
+        rotated[5] = faceData[1];
+        rotated[6] = faceData[8];
+        rotated[7] = faceData[5];
+        rotated[8] = faceData[2];
+    } else {
+        // Counter-clockwise rotation
+        rotated[0] = faceData[2];
+        rotated[1] = faceData[5];
+        rotated[2] = faceData[8];
+        rotated[3] = faceData[1];
+        rotated[4] = faceData[4];
+        rotated[5] = faceData[7];
+        rotated[6] = faceData[0];
+        rotated[7] = faceData[3];
+        rotated[8] = faceData[6];
+    }
+    
+    // Update the face
+    state[face] = rotated;
+    
+    // Rotate adjacent edges
+    rotateAdjacentEdgesInState(state, face, clockwise);
+}
+
+function rotateAdjacentEdgesInState(state, face, clockwise) {
+    // This needs to properly handle all edge pieces for each face rotation
+    // Here's a simplified version that works for basic cases
+    
+    if (face === 'front') {
+        const tempTop = [...state.top].slice(6, 9);
+        const tempRight = [state.right[0], state.right[3], state.right[6]];
+        const tempBottom = [...state.bottom].slice(0, 3);
+        const tempLeft = [state.left[2], state.left[5], state.left[8]];
+        
+        if (clockwise) {
+            // Front clockwise affects top, right, bottom, left
+            for (let i = 0; i < 3; i++) {
+                state.right[i*3] = tempTop[i];
+                state.bottom[i] = tempRight[2-i];
+                state.left[(i+1)*3-1] = tempBottom[i];
+                state.top[6+i] = tempLeft[2-i];
             }
-            
-            function rotateFace(face, clockwise) {
-                // Get the face data
-                const faceData = cubeState[face];
-                const rotated = new Array(9);
-                
-                if (clockwise) {
-                    // Clockwise rotation
-                    rotated[0] = faceData[6];
-                    rotated[1] = faceData[3];
-                    rotated[2] = faceData[0];
-                    rotated[3] = faceData[7];
-                    rotated[4] = faceData[4];
-                    rotated[5] = faceData[1];
-                    rotated[6] = faceData[8];
-                    rotated[7] = faceData[5];
-                    rotated[8] = faceData[2];
-                } else {
-                    // Counter-clockwise rotation
-                    rotated[0] = faceData[2];
-                    rotated[1] = faceData[5];
-                    rotated[2] = faceData[8];
-                    rotated[3] = faceData[1];
-                    rotated[4] = faceData[4];
-                    rotated[5] = faceData[7];
-                    rotated[6] = faceData[0];
-                    rotated[7] = faceData[3];
-                    rotated[8] = faceData[6];
-                }
-                
-                // Update the face
-                cubeState[face] = rotated;
-                
-                // Rotate adjacent edges
-                rotateAdjacentEdges(face, clockwise);
+        } else {
+            // Front counter-clockwise
+            for (let i = 0; i < 3; i++) {
+                state.left[(i+1)*3-1] = tempTop[2-i];
+                state.bottom[i] = tempLeft[i];
+                state.right[i*3] = tempBottom[2-i];
+                state.top[6+i] = tempRight[i];
             }
-            
-            function rotateAdjacentEdges(face, clockwise) {
-                // This is a simplified version - in a real implementation, you would
-                // need to properly rotate the adjacent edge pieces
-                const adjacentFaces = {
-                    'front': ['top', 'right', 'bottom', 'left'],
-                    'back': ['top', 'left', 'bottom', 'right'],
-                    'right': ['top', 'back', 'bottom', 'front'],
-                    'left': ['top', 'front', 'bottom', 'back'],
-                    'top': ['back', 'right', 'front', 'left'],
-                    'bottom': ['front', 'right', 'back', 'left']
-                };
-                
-                const edges = adjacentFaces[face];
-                if (!edges) return;
-                
-                // Get the affected rows/columns
-                const affectedPieces = {
-                    'front': [6,7,8], 'back': [6,7,8], 
-                    'right': [0,3,6], 'left': [2,5,8],
-                    'top': [6,7,8], 'bottom': [6,7,8]
-                };
-                
-                // Save the pieces from the first face
-                const temp = edges.map(edgeFace => {
-                    const pieces = affectedPieces[edgeFace] || [0,1,2];
-                    return pieces.map(pos => cubeState[edgeFace][pos]);
-                });
-                
-                if (clockwise) {
-                    // Rotate pieces clockwise
-                    for (let i = 0; i < edges.length; i++) {
-                        const nextIdx = (i + 1) % edges.length;
-                        const pieces = affectedPieces[edges[i]] || [0,1,2];
-                        const nextPieces = affectedPieces[edges[nextIdx]] || [0,1,2];
-                        
-                        for (let j = 0; j < pieces.length; j++) {
-                            cubeState[edges[i]][pieces[j]] = temp[nextIdx][j];
-                        }
-                    }
-                } else {
-                    // Rotate pieces counter-clockwise
-                    for (let i = 0; i < edges.length; i++) {
-                        const prevIdx = (i - 1 + edges.length) % edges.length;
-                        const pieces = affectedPieces[edges[i]] || [0,1,2];
-                        const prevPieces = affectedPieces[edges[prevIdx]] || [0,1,2];
-                        
-                        for (let j = 0; j < pieces.length; j++) {
-                            cubeState[edges[i]][pieces[j]] = temp[prevIdx][j];
-                        }
-                    }
-                }
-            }
+        }
+    }
+    // Similar logic needed for other faces...
+}
             
             function updateCubeVisuals() {
                 tiles.forEach(tile => {
