@@ -101,9 +101,12 @@
                     <button class="rotation-btn" data-rotate="z-">Rotate Z-</button>
                 </div>
                 
-                <button class="scramble-btn" id="scramble-btn">Scramble Cube</button>
-                <button class="solve-btn" id="solve-btn">Solve Cube</button>
-                <button class="reset-btn" id="reset-btn">Reset Cube</button>
+                <div class="button-group">
+                    <button class="scramble-btn" id="scramble-btn">Scramble Cube</button>
+                    <button class="solve-btn" id="solve-btn">Solve Cube</button>
+                    <button class="play-btn" id="play-btn">Play Solution</button>
+                    <button class="reset-btn" id="reset-btn">Reset Cube</button>
+                </div>
                 
                 <div class="progress-container" id="progress-container">
                     <div class="progress-bar" id="progress-bar"></div>
@@ -111,11 +114,11 @@
                 <div class="solving-status" id="solving-status"></div>
             </div>
         </div>
+        
         <div class="solution-section">
             <h2>Solution Steps</h2>
             <div id="solution-steps"></div>
             
-            <!-- Add the moves display containers here -->
             <div class="moves-display">
                 <div class="moves-panel" id="scramble-moves-container">
                     <h3>Scramble Moves</h3>
@@ -137,7 +140,7 @@
             <li><strong>Rotate the view</strong> using the rotation buttons to access all faces</li>
             <li><strong>Click "Scramble Cube"</strong> to randomly mix the cube</li>
             <li><strong>Click "Solve Cube"</strong> when you've configured your cube</li>
-            <li><strong>Watch the animation</strong> as the cube solves itself</li>
+            <li><strong>Click "Play Solution"</strong> to animate the solution</li>
             <li>Use <strong>"Reset Cube"</strong> to start over with a solved cube</li>
         </ol>
         <p>Tip: Make sure each face has a single solid color for accurate solving.</p>
@@ -145,9 +148,7 @@
     
     <div class="solution-instructions">
         <h3>Move Instructions</h3>
-        <div class="moves-container" id="moves-container">
-            <!-- Moves will be inserted here by JavaScript -->
-        </div>
+        <div class="moves-container" id="moves-container"></div>
         
         <div class="instruction-key">
             <h4>Notation Guide:</h4>

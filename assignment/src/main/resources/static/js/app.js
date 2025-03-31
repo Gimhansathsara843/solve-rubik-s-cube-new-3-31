@@ -1,11 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM elements
     const cubeElement = document.getElementById('cube');
     const colorOptions = document.querySelectorAll('.color-option');
     const tiles = document.querySelectorAll('.tile');
     const solveBtn = document.getElementById('solve-btn');
     const resetBtn = document.getElementById('reset-btn');
     const scrambleBtn = document.getElementById('scramble-btn');
+    const playBtn = document.getElementById('play-btn');
     const rotationBtns = document.querySelectorAll('.rotation-btn');
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const scrambleMovesContainer = document.getElementById('scramble-moves-container');
     const solutionMovesContainer = document.getElementById('solution-moves-container');
 
-    // Cube state
     let currentColor = 'white';
     let currentRotationX = -20;
     let currentRotationY = -30;
@@ -22,8 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let animationTimeout = null;
     let scrambleHistory = [];
     let solutionHistory = [];
+    let cubeModified = false;
 
-    // Default solved state
     const defaultColors = {
         front: Array(9).fill('red'),
         back: Array(9).fill('green'),
@@ -35,7 +34,24 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let cubeState = JSON.parse(JSON.stringify(defaultColors));
 
-    // Event listeners
+    // Initialize UI
+    function initializeUI() {
+        // Set initial colors
+        tiles.forEach(tile => {
+            const face = tile.parentElement.dataset.face;
+            const pos = parseInt(tile.dataset.pos);
+            tile.style.backgroundColor = cubeState[face][pos];
+        });
+        
+        // Set initial rotation
+        updateCubeRotation();
+        
+        // Disable solve and play buttons initially
+        solveBtn.disabled = true;
+        playBtn.disabled = true;
+    }
+
+    // Color selection
     colorOptions.forEach(option => {
         option.addEventListener('click', () => {
             currentColor = option.dataset.color;
@@ -44,20 +60,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Tile coloring
     tiles.forEach(tile => {
         tile.addEventListener('click', () => {
             if (isSolving) return;
+            
             const face = tile.parentElement.dataset.face;
             const pos = parseInt(tile.dataset.pos);
             tile.style.backgroundColor = currentColor;
             cubeState[face][pos] = currentColor;
+            
+            // Mark cube as modified and update button states
+            cubeModified = true;
+            updateButtonStates();
         });
     });
 
+    // Rotation controls
     rotationBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             if (isSolving) return;
+            
             const rotation = btn.dataset.rotate;
+            
             switch (rotation) {
                 case 'x': currentRotationX += 20; break;
                 case 'x-': currentRotationX -= 20; break;
@@ -66,9 +91,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'z': currentRotationZ += 20; break;
                 case 'z-': currentRotationZ -= 20; break;
             }
+            
             updateCubeRotation();
         });
     });
+
+    function updateCubeRotation() {
+        cubeElement.style.transform = `
+            rotateX(${currentRotationX}deg)
+            rotateY(${currentRotationY}deg)
+            rotateZ(${currentRotationZ}deg)
+        `;
+    }
+
+    // Update button states based on cube state
+    function updateButtonStates() {
+        if (cubeModified) {
+            // If cube was modified manually
+            scrambleBtn.disabled = false;
+            solveBtn.disabled = false;
+            playBtn.disabled = true; // Disable play until new solution generated
+        } else {
+            // If cube is in original or scrambled state
+            scrambleBtn.disabled = isSolving;
+            solveBtn.disabled = isSolving || scrambleHistory.length === 0;
+            playBtn.disabled = isSolving || solutionHistory.length === 0;
+        }
+        resetBtn.disabled = isSolving;
+    }
 
     // Scramble button handler
     scrambleBtn.addEventListener('click', async () => {
@@ -76,7 +126,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             isSolving = true;
-            disableButtons();
+            cubeModified = false;
+            updateButtonStates();
             solvingStatus.style.display = 'block';
             solvingStatus.textContent = 'Generating scramble...';
 
@@ -99,25 +150,20 @@ document.addEventListener('DOMContentLoaded', () => {
             solvingStatus.textContent = `Error: ${error.message}`;
         } finally {
             isSolving = false;
-            enableButtons();
+            updateButtonStates();
         }
     });
 
-    // Solve button handler
+    // Solve button handler - generates solution
     solveBtn.addEventListener('click', async () => {
         if (isSolving) return;
         
         try {
             isSolving = true;
-            disableButtons();
+            updateButtonStates();
             solvingStatus.style.display = 'block';
             
-            if (scrambleHistory.length === 0) {
-                solvingStatus.textContent = 'Please scramble first!';
-                return;
-            }
-
-            solvingStatus.textContent = 'Solving cube...';
+            solvingStatus.textContent = 'Generating solution...';
             
             // Generate solution (reverse of scramble with inverted moves)
             solutionHistory = invertMoves(scrambleHistory);
@@ -125,7 +171,26 @@ document.addEventListener('DOMContentLoaded', () => {
             // Display solution moves
             displayMoves(solutionHistory, 'solution');
             
-            // Animate solution
+            solvingStatus.textContent = 'Solution ready! Click Play Solution';
+        } catch (error) {
+            console.error('Solution error:', error);
+            solvingStatus.textContent = `Error: ${error.message}`;
+        } finally {
+            isSolving = false;
+            cubeModified = false;
+            updateButtonStates();
+        }
+    });
+
+    // Play button handler - animates the solution
+    playBtn.addEventListener('click', async () => {
+        if (isSolving || solutionHistory.length === 0) return;
+        
+        try {
+            isSolving = true;
+            updateButtonStates();
+            solvingStatus.style.display = 'block';
+            
             solvingStatus.textContent = 'Animating solution...';
             await animateMoves(solutionHistory, true);
             
@@ -137,12 +202,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 solvingStatus.textContent = 'Cube solved!';
             }
         } catch (error) {
-            console.error('Solving error:', error);
+            console.error('Animation error:', error);
             solvingStatus.textContent = `Error: ${error.message}`;
             resetCubeToSolvedState();
         } finally {
             isSolving = false;
-            enableButtons();
+            updateButtonStates();
         }
     });
 
@@ -151,25 +216,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isSolving) {
             clearTimeout(animationTimeout);
             isSolving = false;
-            enableButtons();
         }
         resetCubeToSolvedState();
         progressContainer.style.display = 'none';
         solvingStatus.style.display = 'none';
         scrambleHistory = [];
         solutionHistory = [];
+        cubeModified = false;
         scrambleMovesContainer.innerHTML = '<h3>Scramble Moves</h3>';
         solutionMovesContainer.innerHTML = '<h3>Solution Moves</h3>';
+        updateButtonStates();
     });
-
-    // Helper functions
-    function updateCubeRotation() {
-        cubeElement.style.transform = `
-            rotateX(${currentRotationX}deg)
-            rotateY(${currentRotationY}deg)
-            rotateZ(${currentRotationZ}deg)
-        `;
-    }
 
     function resetCubeToSolvedState() {
         cubeState = JSON.parse(JSON.stringify(defaultColors));
@@ -188,25 +245,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function disableButtons() {
-        scrambleBtn.disabled = true;
-        solveBtn.disabled = true;
-        resetBtn.disabled = true;
-    }
-
-    function enableButtons() {
-        scrambleBtn.disabled = false;
-        solveBtn.disabled = false;
-        resetBtn.disabled = false;
-    }
-
     // Backend simulation - replace with actual API call
     async function getScrambleFromBackend() {
-        // In a real app, this would be an API call like:
-        // const response = await fetch('/api/scramble');
-        // return await response.json();
-        
-        // Simulated backend response - standard 20-move scramble
         const faces = ['U', 'D', 'F', 'B', 'R', 'L'];
         const modifiers = ['', "'", '2'];
         const scrambleLength = 5;
@@ -293,16 +333,14 @@ document.addEventListener('DOMContentLoaded', () => {
         progressContainer.style.display = 'block';
         progressBar.style.width = '0%';
         
-        const moveDelay = 500; // ms between moves
+        const moveDelay = 500;
         
         for (let i = 0; i < moves.length; i++) {
             if (!isSolving) break;
             
-            // Update progress
             const progress = ((i + 1) / moves.length) * 100;
             progressBar.style.width = `${progress}%`;
             
-            // Highlight current move in solution
             if (isSolution) {
                 document.querySelectorAll('.move-chip').forEach(chip => {
                     chip.classList.remove('current-step');
@@ -315,26 +353,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const move = moves[i];
             const face = move.charAt(0);
             
-            // Highlight face being rotated
             const faceElement = document.querySelector(`.face[data-face="${getFaceName(face)}"]`);
             if (faceElement) faceElement.classList.add('face-highlight');
             
-            // Adjust view for better visibility
             adjustViewForMove(face);
-            
-            // Apply the move with animation
             await applyMoveWithAnimation(move);
             
-            // Remove highlight
             if (faceElement) faceElement.classList.remove('face-highlight');
             
-            // Small delay before next move
             await new Promise(resolve => {
                 animationTimeout = setTimeout(resolve, moveDelay);
             });
         }
         
-        // Clear highlights
         document.querySelectorAll('.move-chip').forEach(chip => {
             chip.classList.remove('current-step');
         });
@@ -354,12 +385,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const isClockwise = !move.includes("'");
             const isDouble = move.includes("2");
             
-            // Apply first rotation
             applyMove(face, isClockwise);
             updateCubeVisuals();
             
             if (isDouble) {
-                // For double moves, apply second rotation after delay
                 setTimeout(() => {
                     applyMove(face, isClockwise);
                     updateCubeVisuals();
@@ -387,7 +416,6 @@ document.addEventListener('DOMContentLoaded', () => {
         cubeState = newState;
     }
 
-    // Face rotation functions (keep your existing implementations)
     function rotateFace(state, face, clockwise) {
         const faceName = getFaceName(face);
         const faceData = [...state[faceName]];
@@ -640,9 +668,9 @@ document.addEventListener('DOMContentLoaded', () => {
             'U': { x: -55, y: -30, z: 0 },
             'D': { x: 55, y: -30, z: 0 },
             'F': { x: 0, y: -30, z: 0 },
-            'B': { x: 0, y: -30, z: 0 },
-            'R': { x: 0, y: -30, z: 0 },
-            'L': { x: 0, y: -30, z: 0 }
+            'B': { x: 0, y: 150, z: 0 },
+            'R': { x: 0, y: 60, z: 0 },
+            'L': { x: 0, y: -120, z: 0 }
         };
         
         const rotation = viewRotations[face];
@@ -652,11 +680,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCubeRotation();
     }
 
-    // Initialize
-    tiles.forEach(tile => {
-        const face = tile.parentElement.dataset.face;
-        const pos = parseInt(tile.dataset.pos);
-        tile.style.backgroundColor = cubeState[face][pos];
-    });
-    updateCubeRotation();
+    // Initialize the UI
+    initializeUI();
 });
