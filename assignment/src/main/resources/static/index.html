@@ -494,6 +494,7 @@
             let currentRotationZ = 0;
             let isSolving = false;
             let animationTimeout = null;
+            let scrambleHistory = [];
             
             // Initialize cube colors (default solved state)
             const defaultColors = {
@@ -511,8 +512,6 @@
             colorOptions.forEach(option => {
                 option.addEventListener('click', () => {
                     currentColor = option.dataset.color;
-                    
-                    // Update selected state
                     colorOptions.forEach(opt => opt.classList.remove('selected'));
                     option.classList.add('selected');
                 });
@@ -525,11 +524,7 @@
                     
                     const face = tile.parentElement.dataset.face;
                     const pos = tile.dataset.pos;
-                    
-                    // Update tile color
                     tile.style.backgroundColor = currentColor;
-                    
-                    // Update cube state
                     cubeState[face][pos] = currentColor;
                 });
             });
@@ -542,24 +537,12 @@
                     const rotation = btn.dataset.rotate;
                     
                     switch (rotation) {
-                        case 'x':
-                            currentRotationX += 20;
-                            break;
-                        case 'x-':
-                            currentRotationX -= 20;
-                            break;
-                        case 'y':
-                            currentRotationY += 20;
-                            break;
-                        case 'y-':
-                            currentRotationY -= 20;
-                            break;
-                        case 'z':
-                            currentRotationZ += 20;
-                            break;
-                        case 'z-':
-                            currentRotationZ -= 20;
-                            break;
+                        case 'x': currentRotationX += 20; break;
+                        case 'x-': currentRotationX -= 20; break;
+                        case 'y': currentRotationY += 20; break;
+                        case 'y-': currentRotationY -= 20; break;
+                        case 'z': currentRotationZ += 20; break;
+                        case 'z-': currentRotationZ -= 20; break;
                     }
                     
                     updateCubeRotation();
@@ -574,147 +557,141 @@
                 `;
             }
             
-            // Scramble button
-            scrambleBtn.addEventListener('click', () => {
+            // Scramble button - now calls backend
+            scrambleBtn.addEventListener('click', async () => {
                 if (isSolving) return;
                 
-                const moves = ['U', 'U\'', 'U2', 'D', 'D\'', 'D2', 'R', 'R\'', 'R2', 'L', 'L\'', 'L2', 'F', 'F\'', 'F2', 'B', 'B\'', 'B2'];
-                const scrambleMoves = [];
-                
-                // Generate 20 random moves
-                for (let i = 0; i < 20; i++) {
-                    const randomMove = moves[Math.floor(Math.random() * moves.length)];
-                    scrambleMoves.push(randomMove);
+                try {
+                    isSolving = true;
+                    scrambleBtn.disabled = true;
+                    solvingStatus.style.display = 'block';
+                    solvingStatus.textContent = 'Generating scramble...';
+                    
+                    const response = await fetch('http://localhost:8080/api/cube/scramble?length=20');
+                    if (!response.ok) {
+                        throw new Error('Failed to generate scramble');
+                    }
+                    
+                    const result = await response.json();
+                    scrambleHistory = result.scramble;
+                    
+                    solvingStatus.textContent = 'Applying scramble...';
+                    displaySolution(scrambleHistory);
+                    animateSolution(scrambleHistory);
+                    
+                } catch (error) {
+                    console.error('Scramble error:', error);
+                    solvingStatus.textContent = `Error: ${error.message}`;
+                } finally {
+                    isSolving = false;
+                    scrambleBtn.disabled = false;
                 }
-                
-                // Apply scramble moves with animation
-                animateSolution(scrambleMoves);
             });
             
-// Add this near the top with other variable declarations
-let scrambleHistory = [];
+            // Solve button - calls backend
+            solveBtn.addEventListener('click', async () => {
+                if (isSolving) return;
+                
+                // If we have scramble history, reverse those moves first
+                if (scrambleHistory.length > 0) {
+                    try {
+                        isSolving = true;
+                        solveBtn.disabled = true;
+                        solvingStatus.style.display = 'block';
+                        solvingStatus.textContent = 'Solving scramble...';
+                        
+                        const response = await fetch('http://localhost:8080/api/cube/solve-scramble', {
+                            method: 'POST'
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error('Failed to solve scramble');
+                        }
+                        
+                        const result = await response.json();
+                        solvingStatus.textContent = 'Solution found!';
+                        displaySolution(result.solution);
+                        animateSolution(result.solution);
+                        scrambleHistory = [];
+                        
+                    } catch (error) {
+                        console.error('Solve error:', error);
+                        solvingStatus.textContent = `Error: ${error.message}`;
+                    } finally {
+                        isSolving = false;
+                        solveBtn.disabled = false;
+                    }
+                    return;
+                }
+                
+                // Otherwise use the algorithm solver
+                try {
+                    isSolving = true;
+                    solveBtn.disabled = true;
+                    progressContainer.style.display = 'block';
+                    solvingStatus.style.display = 'block';
+                    solvingStatus.textContent = 'Initializing...';
 
-// Update the scramble button handler
-scrambleBtn.addEventListener('click', () => {
-    if (isSolving) return;
-    
-    scrambleHistory = []; // Reset history
-    const moves = ['U', 'U\'', 'U2', 'D', 'D\'', 'D2', 'R', 'R\'', 'R2', 'L', 'L\'', 'L2', 'F', 'F\'', 'F2', 'B', 'B\'', 'B2'];
-    
-    // Generate 20 random moves
-    for (let i = 0; i < 20; i++) {
-        const randomMove = moves[Math.floor(Math.random() * moves.length)];
-        scrambleHistory.push(randomMove);
-    }
-    
-    // Apply scramble moves with animation
-    animateSolution(scrambleHistory);
-});
+                    // Validate cube state
+                    solvingStatus.textContent = 'Validating cube...';
+                    const cubeFaces = [
+                        cubeState.front,
+                        cubeState.right,
+                        cubeState.back, 
+                        cubeState.left,
+                        cubeState.top,
+                        cubeState.bottom
+                    ];
 
-// Update the solve button handler to reverse scramble moves if we have history
-solveBtn.addEventListener('click', async () => {
-    if (isSolving) return;
-    
-    // If we have scramble history, reverse those moves first
-    if (scrambleHistory.length > 0) {
-        const reverseMoves = [...scrambleHistory].reverse().map(move => {
-            if (move.endsWith('\'')) return move.replace('\'', '');
-            if (move.endsWith('2')) return move;
-            return move + '\'';
-        });
-        
-        displaySolution(reverseMoves);
-        animateSolution(reverseMoves);
-        scrambleHistory = []; // Clear history after solving
-        return;
-    }
-    
-    // Otherwise use the algorithm solver
-    try {
-        isSolving = true;
-        solveBtn.disabled = true;
-        progressContainer.style.display = 'block';
-        solvingStatus.style.display = 'block';
-        solvingStatus.textContent = 'Initializing...';
+                    if (!validateCubeState(cubeFaces)) {
+                        throw new Error('Invalid cube configuration');
+                    }
 
-        // Validate cube state
-        solvingStatus.textContent = 'Validating cube...';
-        const cubeFaces = [
-            cubeState.front,
-            cubeState.right,
-            cubeState.back, 
-            cubeState.left,
-            cubeState.top,
-            cubeState.bottom
-        ];
+                    solvingStatus.textContent = 'Solving cube...';
+                    
+                    const response = await fetch('http://localhost:8080/api/cube/solve', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(cubeFaces)
+                    });
 
-        if (!validateCubeState(cubeFaces)) {
-            throw new Error('Invalid cube configuration');
-        }
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || `Server error: ${response.status}`);
+                    }
 
-        solvingStatus.textContent = 'Solving cube...';
-        
-        const response = await fetch('http://localhost:8080/api/cube/solve', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(cubeFaces)
-        });
+                    const result = await response.json();
+                    
+                    if (!result.solution) {
+                        throw new Error('No solution returned from server');
+                    }
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `Server error: ${response.status}`);
-        }
-
-        const result = await response.json();
-        
-        if (!result.solution) {
-            throw new Error('No solution returned from server');
-        }
-
-        solvingStatus.textContent = 'Solution found!';
-        displaySolution(result.solution);
-        
-    } catch (error) {
-        console.error('Solving error:', error);
-        solvingStatus.innerHTML = `
-            <div style="color: red;">
-                <strong>Error:</strong> ${error.message}
-                <div style="margin-top: 10px; font-size: 0.9em;">
-                    <p>Please ensure:</p>
-                    <ul>
-                        <li>Java backend is running</li>
-                        <li>No errors in backend console</li>
-                        <li>Correct port (8080) is used</li>
-                    </ul>
-                </div>
-            </div>
-        `;
-    } finally {
-        isSolving = false;
-        solveBtn.disabled = false;
-    }
-});
-
-// Update the tile coloring to include console.log
-tiles.forEach(tile => {
-    tile.addEventListener('click', () => {
-        if (isSolving) return;
-        
-        const face = tile.parentElement.dataset.face;
-        const pos = tile.dataset.pos;
-        
-        // Update tile color
-        tile.style.backgroundColor = currentColor;
-        
-        // Update cube state
-        cubeState[face][pos] = currentColor;
-        
-        // Log the change to console
-        console.log(`Set ${face} face, position ${pos} to ${currentColor}`);
-    });
-});
+                    solvingStatus.textContent = 'Solution found!';
+                    displaySolution(result.solution);
+                    animateSolution(result.solution);
+                    
+                } catch (error) {
+                    console.error('Solving error:', error);
+                    solvingStatus.innerHTML = `
+                        <div style="color: red;">
+                            <strong>Error:</strong> ${error.message}
+                            <div style="margin-top: 10px; font-size: 0.9em;">
+                                <p>Please ensure:</p>
+                                <ul>
+                                    <li>Java backend is running</li>
+                                    <li>No errors in backend console</li>
+                                    <li>Correct port (8080) is used</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                } finally {
+                    isSolving = false;
+                    solveBtn.disabled = false;
+                }
+            });
             
             // Reset button
             resetBtn.addEventListener('click', () => {
@@ -744,6 +721,7 @@ tiles.forEach(tile => {
                 document.getElementById('moves-container').innerHTML = '';
                 progressContainer.style.display = 'none';
                 solvingStatus.style.display = 'none';
+                scrambleHistory = [];
             });
             
             function validateCubeState(cubeFaces) {
@@ -805,9 +783,6 @@ tiles.forEach(tile => {
                     stepElement.textContent = `Step ${index + 1}: ${step} (${getMoveDescription(step)})`;
                     solutionStepsElement.appendChild(stepElement);
                 });
-                
-                // Animate solution
-                animateSolution(steps);
             }
             
             function animateSolution(steps) {
@@ -860,109 +835,101 @@ tiles.forEach(tile => {
             }
             
             function applyMoveToVisualCube(move) {
-    // Create a deep copy of the current cube state
-    const newState = JSON.parse(JSON.stringify(cubeState));
-    
-    // Apply the move to the new state
-    const faceMap = {
-        'U': 'top', 'D': 'bottom', 'F': 'front',
-        'B': 'back', 'R': 'right', 'L': 'left'
-    };
-    
-    const face = move.charAt(0);
-    const faceName = faceMap[face];
-    const isClockwise = !move.includes("'");
-    const isDouble = move.includes("2");
-    
-    // Rotate the face
-    rotateFaceInState(newState, faceName, isClockwise);
-    
-    // For double moves, rotate again
-    if (isDouble) {
-        rotateFaceInState(newState, faceName, isClockwise);
-    }
-    
-    // Update the cube state
-    cubeState = newState;
-    
-    // Update the visual cube
-    updateCubeVisuals();
-    
-    // Also rotate the view to show the move better
-    if (face === 'U') currentRotationY += 90;
-    if (face === 'D') currentRotationY -= 90;
-    if (face === 'R') currentRotationX -= 90;
-    if (face === 'L') currentRotationX += 90;
-    if (face === 'F') currentRotationZ += 90;
-    if (face === 'B') currentRotationZ -= 90;
-    updateCubeRotation();
-}
-
-function rotateFaceInState(state, face, clockwise) {
-    const faceData = state[face];
-    const rotated = new Array(9);
-    
-    if (clockwise) {
-        // Clockwise rotation
-        rotated[0] = faceData[6];
-        rotated[1] = faceData[3];
-        rotated[2] = faceData[0];
-        rotated[3] = faceData[7];
-        rotated[4] = faceData[4];
-        rotated[5] = faceData[1];
-        rotated[6] = faceData[8];
-        rotated[7] = faceData[5];
-        rotated[8] = faceData[2];
-    } else {
-        // Counter-clockwise rotation
-        rotated[0] = faceData[2];
-        rotated[1] = faceData[5];
-        rotated[2] = faceData[8];
-        rotated[3] = faceData[1];
-        rotated[4] = faceData[4];
-        rotated[5] = faceData[7];
-        rotated[6] = faceData[0];
-        rotated[7] = faceData[3];
-        rotated[8] = faceData[6];
-    }
-    
-    // Update the face
-    state[face] = rotated;
-    
-    // Rotate adjacent edges
-    rotateAdjacentEdgesInState(state, face, clockwise);
-}
-
-function rotateAdjacentEdgesInState(state, face, clockwise) {
-    // This needs to properly handle all edge pieces for each face rotation
-    // Here's a simplified version that works for basic cases
-    
-    if (face === 'front') {
-        const tempTop = [...state.top].slice(6, 9);
-        const tempRight = [state.right[0], state.right[3], state.right[6]];
-        const tempBottom = [...state.bottom].slice(0, 3);
-        const tempLeft = [state.left[2], state.left[5], state.left[8]];
-        
-        if (clockwise) {
-            // Front clockwise affects top, right, bottom, left
-            for (let i = 0; i < 3; i++) {
-                state.right[i*3] = tempTop[i];
-                state.bottom[i] = tempRight[2-i];
-                state.left[(i+1)*3-1] = tempBottom[i];
-                state.top[6+i] = tempLeft[2-i];
+                const newState = JSON.parse(JSON.stringify(cubeState));
+                const faceMap = {
+                    'U': 'top', 'D': 'bottom', 'F': 'front',
+                    'B': 'back', 'R': 'right', 'L': 'left'
+                };
+                
+                const face = move.charAt(0);
+                const faceName = faceMap[face];
+                const isClockwise = !move.includes("'");
+                const isDouble = move.includes("2");
+                
+                // Rotate the face
+                rotateFaceInState(newState, faceName, isClockwise);
+                
+                // For double moves, rotate again
+                if (isDouble) {
+                    rotateFaceInState(newState, faceName, isClockwise);
+                }
+                
+                // Update the cube state
+                cubeState = newState;
+                
+                // Update the visual cube
+                updateCubeVisuals();
+                
+                // Also rotate the view to show the move better
+                if (face === 'U') currentRotationY += 90;
+                if (face === 'D') currentRotationY -= 90;
+                if (face === 'R') currentRotationX -= 90;
+                if (face === 'L') currentRotationX += 90;
+                if (face === 'F') currentRotationZ += 90;
+                if (face === 'B') currentRotationZ -= 90;
+                updateCubeRotation();
             }
-        } else {
-            // Front counter-clockwise
-            for (let i = 0; i < 3; i++) {
-                state.left[(i+1)*3-1] = tempTop[2-i];
-                state.bottom[i] = tempLeft[i];
-                state.right[i*3] = tempBottom[2-i];
-                state.top[6+i] = tempRight[i];
+            
+            function rotateFaceInState(state, face, clockwise) {
+                const faceData = state[face];
+                const rotated = new Array(9);
+                
+                if (clockwise) {
+                    // Clockwise rotation
+                    rotated[0] = faceData[6];
+                    rotated[1] = faceData[3];
+                    rotated[2] = faceData[0];
+                    rotated[3] = faceData[7];
+                    rotated[4] = faceData[4];
+                    rotated[5] = faceData[1];
+                    rotated[6] = faceData[8];
+                    rotated[7] = faceData[5];
+                    rotated[8] = faceData[2];
+                } else {
+                    // Counter-clockwise rotation
+                    rotated[0] = faceData[2];
+                    rotated[1] = faceData[5];
+                    rotated[2] = faceData[8];
+                    rotated[3] = faceData[1];
+                    rotated[4] = faceData[4];
+                    rotated[5] = faceData[7];
+                    rotated[6] = faceData[0];
+                    rotated[7] = faceData[3];
+                    rotated[8] = faceData[6];
+                }
+                
+                // Update the face
+                state[face] = rotated;
+                
+                // Rotate adjacent edges
+                rotateAdjacentEdgesInState(state, face, clockwise);
             }
-        }
-    }
-    // Similar logic needed for other faces...
-}
+            
+            function rotateAdjacentEdgesInState(state, face, clockwise) {
+                if (face === 'front') {
+                    const tempTop = [...state.top].slice(6, 9);
+                    const tempRight = [state.right[0], state.right[3], state.right[6]];
+                    const tempBottom = [...state.bottom].slice(0, 3);
+                    const tempLeft = [state.left[2], state.left[5], state.left[8]];
+                    
+                    if (clockwise) {
+                        for (let i = 0; i < 3; i++) {
+                            state.right[i*3] = tempTop[i];
+                            state.bottom[i] = tempRight[2-i];
+                            state.left[(i+1)*3-1] = tempBottom[i];
+                            state.top[6+i] = tempLeft[2-i];
+                        }
+                    } else {
+                        for (let i = 0; i < 3; i++) {
+                            state.left[(i+1)*3-1] = tempTop[2-i];
+                            state.bottom[i] = tempLeft[i];
+                            state.right[i*3] = tempBottom[2-i];
+                            state.top[6+i] = tempRight[i];
+                        }
+                    }
+                }
+                // Similar logic needed for other faces...
+            }
             
             function updateCubeVisuals() {
                 tiles.forEach(tile => {
@@ -974,18 +941,10 @@ function rotateAdjacentEdgesInState(state, face, clockwise) {
             
             function getMoveArrow(move) {
                 const arrows = {
-                    'U': '→',
-                    'U\'': '←',
-                    'U2': '↻',
-                    'R': '↓',
-                    'R\'': '↑',
-                    'L': '↑',
-                    'L\'': '↓',
-                    'F': '↷',
-                    'F\'': '↶',
-                    'B': '↶',
-                    'B\'': '↷',
-                    'D': '→',
+                    'U': '→', 'U\'': '←', 'U2': '↻',
+                    'R': '↓', 'R\'': '↑', 'L': '↑',
+                    'L\'': '↓', 'F': '↷', 'F\'': '↶',
+                    'B': '↶', 'B\'': '↷', 'D': '→',
                     'D\'': '←'
                 };
                 return arrows[move] || '';
@@ -993,18 +952,10 @@ function rotateAdjacentEdgesInState(state, face, clockwise) {
             
             function getMoveDescription(move) {
                 const descriptions = {
-                    'U': 'Top clockwise',
-                    'U\'': 'Top counter-clockwise',
-                    'U2': 'Top 180°',
-                    'R': 'Right down',
-                    'R\'': 'Right up',
-                    'L': 'Left up',
-                    'L\'': 'Left down',
-                    'F': 'Front away',
-                    'F\'': 'Front toward',
-                    'B': 'Back toward',
-                    'B\'': 'Back away',
-                    'D': 'Bottom clockwise',
+                    'U': 'Top clockwise', 'U\'': 'Top counter-clockwise', 'U2': 'Top 180°',
+                    'R': 'Right down', 'R\'': 'Right up', 'L': 'Left up',
+                    'L\'': 'Left down', 'F': 'Front away', 'F\'': 'Front toward',
+                    'B': 'Back toward', 'B\'': 'Back away', 'D': 'Bottom clockwise',
                     'D\'': 'Bottom counter-clockwise'
                 };
                 return descriptions[move] || 'Unknown move';
