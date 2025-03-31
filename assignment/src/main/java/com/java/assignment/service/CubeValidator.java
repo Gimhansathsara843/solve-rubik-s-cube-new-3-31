@@ -1,13 +1,13 @@
 package com.java.assignment.service;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class CubeValidator {
-    private static final List<String> STANDARD_COLORS = 
-        Arrays.asList("white", "red", "blue", "green", "orange", "yellow");
+    private static final Set<String> STANDARD_COLORS_SET = new HashSet<>(Arrays.asList("white", "red", "blue", "green", "orange", "yellow"));
 
     public static boolean isValidCube(String[][] cubeFaces) {
         // Basic structure validation
@@ -16,7 +16,10 @@ public class CubeValidator {
         }
 
         Set<String> centers = new HashSet<>();
-        int[] colorCounts = new int[STANDARD_COLORS.size()];
+        Map<String, Integer> colorCounts = new HashMap<>();
+        for (String color : STANDARD_COLORS_SET) {
+            colorCounts.put(color, 0);  // Initialize color counts
+        }
 
         for (String[] face : cubeFaces) {
             // Face structure validation
@@ -26,7 +29,7 @@ public class CubeValidator {
 
             // Center validation
             String center = face[4];
-            if (!STANDARD_COLORS.contains(center)) {
+            if (!STANDARD_COLORS_SET.contains(center)) {
                 return false;
             }
             if (!centers.add(center)) {
@@ -35,16 +38,15 @@ public class CubeValidator {
 
             // Color counts
             for (String color : face) {
-                int colorIndex = STANDARD_COLORS.indexOf(color);
-                if (colorIndex == -1) {
+                if (!STANDARD_COLORS_SET.contains(color)) {
                     return false; // Invalid color
                 }
-                colorCounts[colorIndex]++;
+                colorCounts.put(color, colorCounts.get(color) + 1);
             }
         }
 
         // Verify all colors appear exactly 9 times
-        for (int count : colorCounts) {
+        for (Integer count : colorCounts.values()) {
             if (count != 9) {
                 return false;
             }
@@ -58,12 +60,7 @@ public class CubeValidator {
             return false;
         }
 
-        // Additional physical checks would go here:
-        // - Corner piece validation (3 colors each)
-        // - Edge piece validation (2 colors each)
-        // - Color adjacency rules
-        // - Parity checks
-
-        return true; // Simplified - implement full checks
+        // Placeholder for additional physical checks (e.g., corner, edge, adjacency, parity)
+        return true; // Implement additional checks if needed
     }
 }

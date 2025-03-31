@@ -92,12 +92,12 @@
             cursor: pointer;
         }
         
-        .front { transform: translateZ(50px); background-color: rgba(255, 0, 0, 0.2); }
-        .back { transform: rotateY(180deg) translateZ(50px); background-color: rgba(0, 255, 0, 0.2); }
-        .right { transform: rotateY(90deg) translateZ(50px); background-color: rgba(0, 0, 255, 0.2); }
-        .left { transform: rotateY(-90deg) translateZ(50px); background-color: rgba(255, 165, 0, 0.2); }
-        .top { transform: rotateX(90deg) translateZ(50px); background-color: rgba(255, 255, 255, 0.2); }
-        .bottom { transform: rotateX(-90deg) translateZ(50px); background-color: rgba(255, 255, 0, 0.2); }
+        .front { transform: translateZ(50px); }
+        .back { transform: rotateY(180deg) translateZ(50px); }
+        .right { transform: rotateY(90deg) translateZ(50px); }
+        .left { transform: rotateY(-90deg) translateZ(50px); }
+        .top { transform: rotateX(90deg) translateZ(50px); }
+        .bottom { transform: rotateX(-90deg) translateZ(50px); }
         
         .controls {
             display: flex;
@@ -163,6 +163,16 @@
             margin-top: 20px;
         }
         
+        .scramble-btn {
+            padding: 10px 20px;
+            background-color: #ffc107;
+            color: #333;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
         .instructions {
             background-color: white;
             padding: 20px;
@@ -180,61 +190,84 @@
         .instructions ol {
             padding-left: 20px;
         }
+        
         .solution-instructions {
-  margin-top: 20px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.moves-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 15px 0;
-}
-
-.move-chip {
-  padding: 8px 12px;
-  background: #e9ecef;
-  border-radius: 20px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-}
-
-.move-chip .move-arrow {
-  margin-left: 5px;
-  color: #6c757d;
-}
-
-.instruction-key {
-  margin-top: 20px;
-  padding: 10px;
-  background: #e9ecef;
-  border-radius: 5px;
-}
-
-.notation-item {
-  display: flex;
-  align-items: center;
-  margin: 5px 0;
-}
-
-.notation-symbol {
-  font-weight: bold;
-  width: 30px;
-}
-
-.notation-meaning {
-  flex: 1;
-  margin: 0 10px;
-}
-
-.notation-arrow {
-  font-size: 1.2em;
-  width: 20px;
-}
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .moves-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+        }
+        
+        .move-chip {
+            padding: 8px 12px;
+            background: #e9ecef;
+            border-radius: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+        
+        .move-chip .move-arrow {
+            margin-left: 5px;
+            color: #6c757d;
+        }
+        
+        .instruction-key {
+            margin-top: 20px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+        }
+        
+        .notation-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        
+        .notation-symbol {
+            font-weight: bold;
+            width: 30px;
+        }
+        
+        .notation-meaning {
+            flex: 1;
+            margin: 0 10px;
+        }
+        
+        .notation-arrow {
+            font-size: 1.2em;
+            width: 20px;
+        }
+        
+        .progress-container {
+            width: 100%;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background-color: #28a745;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .solving-status {
+            margin-top: 10px;
+            font-weight: bold;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -332,8 +365,14 @@
                     <button class="rotation-btn" data-rotate="z-">Rotate Z-</button>
                 </div>
                 
+                <button class="scramble-btn" id="scramble-btn">Scramble Cube</button>
                 <button class="solve-btn" id="solve-btn">Solve Cube</button>
                 <button class="reset-btn" id="reset-btn">Reset Cube</button>
+                
+                <div class="progress-container" id="progress-container">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+                <div class="solving-status" id="solving-status"></div>
             </div>
         </div>
         
@@ -349,124 +388,91 @@
             <li><strong>Select a color</strong> from the palette at the top</li>
             <li><strong>Click on tiles</strong> in the 3D cube to apply the selected color</li>
             <li><strong>Rotate the view</strong> using the rotation buttons to access all faces</li>
+            <li><strong>Click "Scramble Cube"</strong> to randomly mix the cube</li>
             <li><strong>Click "Solve Cube"</strong> when you've configured your cube</li>
-            <li><strong>Follow the solution steps</strong> that appear on the right</li>
+            <li><strong>Watch the animation</strong> as the cube solves itself</li>
             <li>Use <strong>"Reset Cube"</strong> to start over with a solved cube</li>
         </ol>
         <p>Tip: Make sure each face has a single solid color for accurate solving.</p>
     </div>
+    
     <div class="solution-instructions">
         <h3>Move Instructions</h3>
         <div class="moves-container" id="moves-container">
-          <!-- Moves will be inserted here by JavaScript -->
+            <!-- Moves will be inserted here by JavaScript -->
         </div>
         
-        <div class="solution-instructions">
-            <h3>Move Instructions</h3>
-            <div class="moves-container" id="moves-container">
-              <!-- Moves will be inserted here by JavaScript -->
-            </div>
+        <div class="instruction-key">
+            <h4>Notation Guide:</h4>
             
-            <!-- Complete Notation Guide -->
-            <div class="instruction-key">
-              <h4>Notation Guide:</h4>
-              
-              <div class="notation-group">
+            <div class="notation-group">
                 <h5>Face Turns (90° clockwise)</h5>
                 <div class="notation-item">
-                  <span class="notation-symbol">U</span>
-                  <span class="notation-meaning">Up (top) layer →</span>
-                  <span class="notation-arrow">→</span>
+                    <span class="notation-symbol">U</span>
+                    <span class="notation-meaning">Up (top) layer →</span>
+                    <span class="notation-arrow">→</span>
                 </div>
                 <div class="notation-item">
-                  <span class="notation-symbol">R</span>
-                  <span class="notation-meaning">Right side ↓</span>
-                  <span class="notation-arrow">↓</span>
+                    <span class="notation-symbol">R</span>
+                    <span class="notation-meaning">Right side ↓</span>
+                    <span class="notation-arrow">↓</span>
                 </div>
                 <div class="notation-item">
-                  <span class="notation-symbol">L</span>
-                  <span class="notation-meaning">Left side ↑</span>
-                  <span class="notation-arrow">↑</span>
+                    <span class="notation-symbol">L</span>
+                    <span class="notation-meaning">Left side ↑</span>
+                    <span class="notation-arrow">↑</span>
                 </div>
                 <div class="notation-item">
-                  <span class="notation-symbol">F</span>
-                  <span class="notation-meaning">Front layer ↻</span>
-                  <span class="notation-arrow">↻</span>
+                    <span class="notation-symbol">F</span>
+                    <span class="notation-meaning">Front layer ↻</span>
+                    <span class="notation-arrow">↻</span>
                 </div>
                 <div class="notation-item">
-                  <span class="notation-symbol">B</span>
-                  <span class="notation-meaning">Back layer ↺</span>
-                  <span class="notation-arrow">↺</span>
+                    <span class="notation-symbol">B</span>
+                    <span class="notation-meaning">Back layer ↺</span>
+                    <span class="notation-arrow">↺</span>
                 </div>
                 <div class="notation-item">
-                  <span class="notation-symbol">D</span>
-                  <span class="notation-meaning">Down (bottom) layer →</span>
-                  <span class="notation-arrow">→</span>
+                    <span class="notation-symbol">D</span>
+                    <span class="notation-meaning">Down (bottom) layer →</span>
+                    <span class="notation-arrow">→</span>
                 </div>
-              </div>
-          
-              <div class="notation-group">
+            </div>
+            
+            <div class="notation-group">
                 <h5>Counter-clockwise (Add ')</h5>
                 <div class="notation-item">
-                  <span class="notation-symbol">U'</span>
-                  <span class="notation-meaning">Up layer ←</span>
-                  <span class="notation-arrow">←</span>
+                    <span class="notation-symbol">U'</span>
+                    <span class="notation-meaning">Up layer ←</span>
+                    <span class="notation-arrow">←</span>
                 </div>
                 <div class="notation-item">
-                  <span class="notation-symbol">R'</span>
-                  <span class="notation-meaning">Right side ↑</span>
-                  <span class="notation-arrow">↑</span>
+                    <span class="notation-symbol">R'</span>
+                    <span class="notation-meaning">Right side ↑</span>
+                    <span class="notation-arrow">↑</span>
                 </div>
                 <div class="notation-item">
-                  <span class="notation-symbol">F'</span>
-                  <span class="notation-meaning">Front layer ↺</span>
-                  <span class="notation-arrow">↺</span>
+                    <span class="notation-symbol">F'</span>
+                    <span class="notation-meaning">Front layer ↺</span>
+                    <span class="notation-arrow">↺</span>
                 </div>
-              </div>
-          
-              <div class="notation-group">
+            </div>
+            
+            <div class="notation-group">
                 <h5>Double Turns (Add 2)</h5>
                 <div class="notation-item">
-                  <span class="notation-symbol">U2</span>
-                  <span class="notation-meaning">Up layer 180°</span>
-                  <span class="notation-arrow">↻↻</span>
+                    <span class="notation-symbol">U2</span>
+                    <span class="notation-meaning">Up layer 180°</span>
+                    <span class="notation-arrow">↻↻</span>
                 </div>
                 <div class="notation-item">
-                  <span class="notation-symbol">F2</span>
-                  <span class="notation-meaning">Front layer 180°</span>
-                  <span class="notation-arrow">↻↻</span>
+                    <span class="notation-symbol">F2</span>
+                    <span class="notation-meaning">Front layer 180°</span>
+                    <span class="notation-arrow">↻↻</span>
                 </div>
-              </div>
-          
-              <div class="notation-group">
-                <h5>Slice Moves</h5>
-                <div class="notation-item">
-                  <span class="notation-symbol">M</span>
-                  <span class="notation-meaning">Middle layer (L direction)</span>
-                  <span class="notation-arrow">↑</span>
-                </div>
-                <div class="notation-item">
-                  <span class="notation-symbol">E</span>
-                  <span class="notation-meaning">Equator layer (D direction)</span>
-                  <span class="notation-arrow">→</span>
-                </div>
-              </div>
-          
-              <div class="notation-group">
-                <h5>Whole Cube Rotations</h5>
-                <div class="notation-item">
-                  <span class="notation-symbol">x</span>
-                  <span class="notation-meaning">Rotate cube on R</span>
-                  <span class="notation-arrow">↷</span>
-                </div>
-                <div class="notation-item">
-                  <span class="notation-symbol">y</span>
-                  <span class="notation-meaning">Rotate cube on U</span>
-                  <span class="notation-arrow">↻</span>
-                </div>
-              </div>
             </div>
-          </div>
+        </div>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -475,13 +481,19 @@
             const tiles = document.querySelectorAll('.tile');
             const solveBtn = document.getElementById('solve-btn');
             const resetBtn = document.getElementById('reset-btn');
+            const scrambleBtn = document.getElementById('scramble-btn');
             const rotationBtns = document.querySelectorAll('.rotation-btn');
             const solutionStepsElement = document.getElementById('solution-steps');
+            const progressContainer = document.getElementById('progress-container');
+            const progressBar = document.getElementById('progress-bar');
+            const solvingStatus = document.getElementById('solving-status');
             
             let currentColor = 'white';
             let currentRotationX = -20;
             let currentRotationY = -30;
             let currentRotationZ = 0;
+            let isSolving = false;
+            let animationTimeout = null;
             
             // Initialize cube colors (default solved state)
             const defaultColors = {
@@ -509,6 +521,8 @@
             // Tile coloring
             tiles.forEach(tile => {
                 tile.addEventListener('click', () => {
+                    if (isSolving) return;
+                    
                     const face = tile.parentElement.dataset.face;
                     const pos = tile.dataset.pos;
                     
@@ -523,6 +537,8 @@
             // Rotation controls
             rotationBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
+                    if (isSolving) return;
+                    
                     const rotation = btn.dataset.rotate;
                     
                     switch (rotation) {
@@ -558,53 +574,113 @@
                 `;
             }
             
-            // Solve button
-            solveBtn.addEventListener('click', async () => {
-                // Prepare cube data for API
-                const cubeFaces = [
-                    cubeState.front,
-                    cubeState.right,
-                    cubeState.back,
-                    cubeState.left,
-                    cubeState.top,
-                    cubeState.bottom
-                ];
+            // Scramble button
+            scrambleBtn.addEventListener('click', () => {
+                if (isSolving) return;
                 
-                // Validate cube state
-                if (!validateCubeState(cubeFaces)) {
-    alert('Invalid cube state! Please ensure:\n'
-        + '- All tiles have colors\n'
-        + '- Each color (white, red, blue, green, orange, yellow) appears exactly 9 times\n'
-        + '- The cube configuration is physically possible');
-    return;
-}
+                const moves = ['U', 'U\'', 'U2', 'D', 'D\'', 'D2', 'R', 'R\'', 'R2', 'L', 'L\'', 'L2', 'F', 'F\'', 'F2', 'B', 'B\'', 'B2'];
+                const scrambleMoves = [];
                 
-                try {
-                    // Call backend API
-                    // Change this line in your solve button event handler
-                        const response = await fetch('http://localhost:8080/api/cube/solve', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(cubeFaces)
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error('Failed to solve cube');
-                    }
-                    
-                    const solution = await response.json();
-                    displaySolution(solution);
-                    
-                } catch (error) {
-                    console.error('Error solving cube:', error);
-                    alert('Error solving cube. Please check console for details.');
+                // Generate 20 random moves
+                for (let i = 0; i < 20; i++) {
+                    const randomMove = moves[Math.floor(Math.random() * moves.length)];
+                    scrambleMoves.push(randomMove);
                 }
+                
+                // Apply scramble moves with animation
+                animateSolution(scrambleMoves);
             });
+            
+            // Solve button
+// Replace the solveBtn click handler with this:
+solveBtn.addEventListener('click', async () => {
+    if (isSolving) return;
+    
+    try {
+        isSolving = true;
+        solveBtn.disabled = true;
+        progressContainer.style.display = 'block';
+        solvingStatus.style.display = 'block';
+        solvingStatus.textContent = 'Initializing...';
+
+        // First verify backend connection
+        try {
+            const pingResponse = await fetch('http://localhost:8080/api/cube/solved-state');
+            if (!pingResponse.ok) {
+                throw new Error('Backend not responding');
+            }
+        } catch (err) {
+            throw new Error(`Backend connection failed: ${err.message}`);
+        }
+
+        solvingStatus.textContent = 'Validating cube...';
+        
+        const cubeFaces = [
+            cubeState.front,
+            cubeState.right,
+            cubeState.back, 
+            cubeState.left,
+            cubeState.top,
+            cubeState.bottom
+        ];
+
+        // Validate cube state
+        if (!validateCubeState(cubeFaces)) {
+            throw new Error('Invalid cube configuration');
+        }
+
+        solvingStatus.textContent = 'Solving cube...';
+        
+        const response = await fetch('http://localhost:8080/api/cube/solve', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(cubeFaces)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Server error: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (!result.solution) {
+            throw new Error('No solution returned from server');
+        }
+
+        solvingStatus.textContent = 'Solution found!';
+        displaySolution(result.solution);
+        
+    } catch (error) {
+        console.error('Solving error:', error);
+        solvingStatus.innerHTML = `
+            <div style="color: red;">
+                <strong>Error:</strong> ${error.message}
+                <div style="margin-top: 10px; font-size: 0.9em;">
+                    <p>Please ensure:</p>
+                    <ul>
+                        <li>Java backend is running</li>
+                        <li>No errors in backend console</li>
+                        <li>Correct port (8080) is used</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    } finally {
+        isSolving = false;
+        solveBtn.disabled = false;
+    }
+});
             
             // Reset button
             resetBtn.addEventListener('click', () => {
+                if (isSolving) {
+                    clearTimeout(animationTimeout);
+                    isSolving = false;
+                }
+                
                 // Reset cube state
                 cubeState = JSON.parse(JSON.stringify(defaultColors));
                 
@@ -623,121 +699,279 @@
                 
                 // Clear solution
                 solutionStepsElement.innerHTML = '';
+                document.getElementById('moves-container').innerHTML = '';
+                progressContainer.style.display = 'none';
+                solvingStatus.style.display = 'none';
             });
             
-            // function validateCubeState(cubeFaces) {
-            //     // Check if each face has a uniform color
-            //     for (const face of cubeFaces) {
-            //         const firstColor = face[0];
-            //         for (let i = 1; i < face.length; i++) {
-            //             if (face[i] !== firstColor) {
-            //                 return false;
-            //             }
-            //         }
-            //     }
-            //     return true;
-            // }
-
-//             function validateCubeState(cubeFaces) {
-//     // Check all tiles have colors
-//     for (const face of cubeFaces) {
-//         for (const tile of face) {
-//             if (!tile || typeof tile !== 'string') {
-//                 return false;
-//             }
-//         }
-//     }
-    
-//     // Count all colors to ensure we have exactly 9 of each
-//     const colorCounts = {};
-//     cubeFaces.flat().forEach(color => {
-//         colorCounts[color] = (colorCounts[color] || 0) + 1;
-//     });
-    
-//     // Standard cube has 9 tiles of each color
-//     const expectedCount = 9;
-//     for (const color in colorCounts) {
-//         if (colorCounts[color] !== expectedCount) {
-//             return false;
-//         }
-//     }
-    
-//     return true;
-// }
-
-function validateCubeState(cubeFaces) {
-    // Check all tiles have colors
-    for (const face of cubeFaces) {
-        for (const tile of face) {
-            if (!tile || typeof tile !== 'string') {
-                return false;
+            function validateCubeState(cubeFaces) {
+                // Check all tiles have colors
+                for (const face of cubeFaces) {
+                    for (const tile of face) {
+                        if (!tile || typeof tile !== 'string') {
+                            return false;
+                        }
+                    }
+                }
+                
+                // Count all colors to ensure we have exactly 9 of each
+                const colorCounts = {};
+                cubeFaces.flat().forEach(color => {
+                    colorCounts[color] = (colorCounts[color] || 0) + 1;
+                });
+                
+                // Standard cube colors
+                const expectedColors = ['white', 'red', 'blue', 'green', 'orange', 'yellow'];
+                
+                // Check we have exactly 9 of each expected color
+                for (const color of expectedColors) {
+                    if (colorCounts[color] !== 9) {
+                        return false;
+                    }
+                }
+                
+                return true;
             }
-        }
-    }
-    
-    // Count all colors to ensure we have exactly 9 of each
-    const colorCounts = {};
-    cubeFaces.flat().forEach(color => {
-        colorCounts[color] = (colorCounts[color] || 0) + 1;
-    });
-    
-    // Standard cube colors
-    const expectedColors = ['white', 'red', 'blue', 'green', 'orange', 'yellow'];
-    
-    // Check we have exactly 9 of each expected color
-    for (const color of expectedColors) {
-        if (colorCounts[color] !== 9) {
-            return false;
-        }
-    }
-    
-    return true;
-}
             
             function displaySolution(steps) {
                 solutionStepsElement.innerHTML = '';
+                const movesContainer = document.getElementById('moves-container');
+                movesContainer.innerHTML = '';
                 
                 if (steps.length === 0) {
                     solutionStepsElement.innerHTML = '<p>Cube is already solved!</p>';
                     return;
                 }
                 
+                // Update progress bar
+                progressBar.style.width = '0%';
+                
+                // Create move chips
                 steps.forEach((step, index) => {
+                    const moveElement = document.createElement('div');
+                    moveElement.className = 'move-chip';
+                    moveElement.innerHTML = `
+                        <span class="move-symbol">${step}</span>
+                        <span class="move-arrow">${getMoveArrow(step)}</span>
+                    `;
+                    moveElement.dataset.index = index;
+                    movesContainer.appendChild(moveElement);
+                    
+                    // Add to solution steps
                     const stepElement = document.createElement('div');
                     stepElement.className = 'solution-step';
-                    stepElement.textContent = `Step ${index + 1}: ${step}`;
+                    stepElement.textContent = `Step ${index + 1}: ${step} (${getMoveDescription(step)})`;
                     solutionStepsElement.appendChild(stepElement);
                 });
                 
-                // Animate solution (simplified)
-                let currentStep = 0;
-                const stepElements = document.querySelectorAll('.solution-step');
+                // Animate solution
+                animateSolution(steps);
+            }
+            
+            function animateSolution(steps) {
+                if (steps.length === 0) return;
                 
-                const animateSolution = () => {
-                    if (currentStep >= steps.length) return;
+                isSolving = true;
+                solveBtn.disabled = true;
+                scrambleBtn.disabled = true;
+                progressContainer.style.display = 'block';
+                solvingStatus.style.display = 'block';
+                solvingStatus.textContent = 'Animating solution...';
+                
+                let currentStep = 0;
+                const totalSteps = steps.length;
+                const stepElements = document.querySelectorAll('.solution-step');
+                const moveChips = document.querySelectorAll('.move-chip');
+                
+                const animateStep = () => {
+                    if (currentStep >= totalSteps) {
+                        // Animation complete
+                        isSolving = false;
+                        solveBtn.disabled = false;
+                        scrambleBtn.disabled = false;
+                        solvingStatus.textContent = 'Cube solved!';
+                        return;
+                    }
+                    
+                    // Update progress
+                    const progress = (currentStep / totalSteps) * 100;
+                    progressBar.style.width = `${progress}%`;
                     
                     // Highlight current step
                     stepElements.forEach((el, idx) => {
                         el.classList.toggle('current-step', idx === currentStep);
                     });
                     
+                    // Highlight current move chip
+                    moveChips.forEach((chip, idx) => {
+                        chip.style.backgroundColor = idx === currentStep ? '#c3e6cb' : '#e9ecef';
+                    });
+                    
                     // Apply move to cube visualization
                     applyMoveToVisualCube(steps[currentStep]);
                     
                     currentStep++;
-                    if (currentStep < steps.length) {
-                        setTimeout(animateSolution, 1000);
-                    }
+                    animationTimeout = setTimeout(animateStep, 800);
                 };
                 
-                animateSolution();
+                animateStep();
             }
             
             function applyMoveToVisualCube(move) {
-                // Simplified - in a real app this would animate the cube rotation
-                console.log(`Applying move: ${move}`);
-                // This would need to update the cubeState and visual representation
-                // For now, we'll just log it
+                // Update cube state based on the move
+                const faceMap = {
+                    'U': 'top', 'D': 'bottom', 'F': 'front',
+                    'B': 'back', 'R': 'right', 'L': 'left'
+                };
+                
+                const face = move.charAt(0);
+                const faceName = faceMap[face];
+                const isClockwise = move.length === 1 || move[1] === '2';
+                const isDouble = move.length > 1 && move[1] === '2';
+                
+                // Rotate the face
+                rotateFace(faceName, isClockwise);
+                if (isDouble) {
+                    rotateFace(faceName, isClockwise);
+                }
+                
+                // Update the visual cube
+                updateCubeVisuals();
+            }
+            
+            function rotateFace(face, clockwise) {
+                // Get the face data
+                const faceData = cubeState[face];
+                const rotated = new Array(9);
+                
+                if (clockwise) {
+                    // Clockwise rotation
+                    rotated[0] = faceData[6];
+                    rotated[1] = faceData[3];
+                    rotated[2] = faceData[0];
+                    rotated[3] = faceData[7];
+                    rotated[4] = faceData[4];
+                    rotated[5] = faceData[1];
+                    rotated[6] = faceData[8];
+                    rotated[7] = faceData[5];
+                    rotated[8] = faceData[2];
+                } else {
+                    // Counter-clockwise rotation
+                    rotated[0] = faceData[2];
+                    rotated[1] = faceData[5];
+                    rotated[2] = faceData[8];
+                    rotated[3] = faceData[1];
+                    rotated[4] = faceData[4];
+                    rotated[5] = faceData[7];
+                    rotated[6] = faceData[0];
+                    rotated[7] = faceData[3];
+                    rotated[8] = faceData[6];
+                }
+                
+                // Update the face
+                cubeState[face] = rotated;
+                
+                // Rotate adjacent edges
+                rotateAdjacentEdges(face, clockwise);
+            }
+            
+            function rotateAdjacentEdges(face, clockwise) {
+                // This is a simplified version - in a real implementation, you would
+                // need to properly rotate the adjacent edge pieces
+                const adjacentFaces = {
+                    'front': ['top', 'right', 'bottom', 'left'],
+                    'back': ['top', 'left', 'bottom', 'right'],
+                    'right': ['top', 'back', 'bottom', 'front'],
+                    'left': ['top', 'front', 'bottom', 'back'],
+                    'top': ['back', 'right', 'front', 'left'],
+                    'bottom': ['front', 'right', 'back', 'left']
+                };
+                
+                const edges = adjacentFaces[face];
+                if (!edges) return;
+                
+                // Get the affected rows/columns
+                const affectedPieces = {
+                    'front': [6,7,8], 'back': [6,7,8], 
+                    'right': [0,3,6], 'left': [2,5,8],
+                    'top': [6,7,8], 'bottom': [6,7,8]
+                };
+                
+                // Save the pieces from the first face
+                const temp = edges.map(edgeFace => {
+                    const pieces = affectedPieces[edgeFace] || [0,1,2];
+                    return pieces.map(pos => cubeState[edgeFace][pos]);
+                });
+                
+                if (clockwise) {
+                    // Rotate pieces clockwise
+                    for (let i = 0; i < edges.length; i++) {
+                        const nextIdx = (i + 1) % edges.length;
+                        const pieces = affectedPieces[edges[i]] || [0,1,2];
+                        const nextPieces = affectedPieces[edges[nextIdx]] || [0,1,2];
+                        
+                        for (let j = 0; j < pieces.length; j++) {
+                            cubeState[edges[i]][pieces[j]] = temp[nextIdx][j];
+                        }
+                    }
+                } else {
+                    // Rotate pieces counter-clockwise
+                    for (let i = 0; i < edges.length; i++) {
+                        const prevIdx = (i - 1 + edges.length) % edges.length;
+                        const pieces = affectedPieces[edges[i]] || [0,1,2];
+                        const prevPieces = affectedPieces[edges[prevIdx]] || [0,1,2];
+                        
+                        for (let j = 0; j < pieces.length; j++) {
+                            cubeState[edges[i]][pieces[j]] = temp[prevIdx][j];
+                        }
+                    }
+                }
+            }
+            
+            function updateCubeVisuals() {
+                tiles.forEach(tile => {
+                    const face = tile.parentElement.dataset.face;
+                    const pos = tile.dataset.pos;
+                    tile.style.backgroundColor = cubeState[face][pos];
+                });
+            }
+            
+            function getMoveArrow(move) {
+                const arrows = {
+                    'U': '→',
+                    'U\'': '←',
+                    'U2': '↻',
+                    'R': '↓',
+                    'R\'': '↑',
+                    'L': '↑',
+                    'L\'': '↓',
+                    'F': '↷',
+                    'F\'': '↶',
+                    'B': '↶',
+                    'B\'': '↷',
+                    'D': '→',
+                    'D\'': '←'
+                };
+                return arrows[move] || '';
+            }
+            
+            function getMoveDescription(move) {
+                const descriptions = {
+                    'U': 'Top clockwise',
+                    'U\'': 'Top counter-clockwise',
+                    'U2': 'Top 180°',
+                    'R': 'Right down',
+                    'R\'': 'Right up',
+                    'L': 'Left up',
+                    'L\'': 'Left down',
+                    'F': 'Front away',
+                    'F\'': 'Front toward',
+                    'B': 'Back toward',
+                    'B\'': 'Back away',
+                    'D': 'Bottom clockwise',
+                    'D\'': 'Bottom counter-clockwise'
+                };
+                return descriptions[move] || 'Unknown move';
             }
             
             // Initialize tile colors
@@ -747,76 +981,6 @@ function validateCubeState(cubeFaces) {
                 tile.style.backgroundColor = cubeState[face][pos];
             });
         });
-
-        function displaySolution(steps) {
-  const solutionStepsElement = document.getElementById('solution-steps');
-  const movesContainer = document.getElementById('moves-container');
-  
-  solutionStepsElement.innerHTML = '';
-  movesContainer.innerHTML = '';
-  
-  if (steps.length === 0) {
-    solutionStepsElement.innerHTML = '<p>Cube is already solved!</p>';
-    return;
-  }
-
-  // Create move chips
-  steps.forEach((step, index) => {
-    const moveElement = document.createElement('div');
-    moveElement.className = 'move-chip';
-    moveElement.innerHTML = `
-      <span class="move-symbol">${step}</span>
-      <span class="move-arrow">${getMoveArrow(step)}</span>
-    `;
-    moveElement.dataset.index = index;
-    movesContainer.appendChild(moveElement);
-    
-    // Add to solution steps
-    const stepElement = document.createElement('div');
-    stepElement.className = 'solution-step';
-    stepElement.textContent = `Step ${index + 1}: ${step} (${getMoveDescription(step)})`;
-    solutionStepsElement.appendChild(stepElement);
-  });
-}
-
-function getMoveArrow(move) {
-  const arrows = {
-    'U': '→',
-    'U\'': '←',
-    'U2': '↻',
-    'R': '↓',
-    'R\'': '↑',
-    'L': '↑',
-    'L\'': '↓',
-    'F': '↷',
-    'F\'': '↶',
-    'B': '↶',
-    'B\'': '↷',
-    'D': '→',
-    'D\'': '←'
-  };
-  return arrows[move] || '';
-}
-
-function getMoveDescription(move) {
-  const descriptions = {
-    'U': 'Top clockwise',
-    'U\'': 'Top counter-clockwise',
-    'U2': 'Top 180°',
-    'R': 'Right down',
-    'R\'': 'Right up',
-    'L': 'Left up',
-    'L\'': 'Left down',
-    'F': 'Front away',
-    'F\'': 'Front toward',
-    'B': 'Back toward',
-    'B\'': 'Back away',
-    'D': 'Bottom clockwise',
-    'D\'': 'Bottom counter-clockwise'
-  };
-  return descriptions[move] || 'Unknown move';
-}
     </script>
-
 </body>
 </html>

@@ -78,6 +78,14 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <version>3.8.1</version>
+    <configuration>
+        <fork>true</fork>
+        <memoryInitialSize>512m</memoryInitialSize> <!-- Initial memory -->
+        <memoryMaximumSize>2g</memoryMaximumSize> <!-- Maximum memory -->
+    </configuration>
 	</build>
 
 </project>
